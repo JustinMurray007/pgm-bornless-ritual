@@ -1238,3 +1238,159 @@ body {
   max-width: 320px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   How It Works Page
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.how-it-works-page {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.how-it-works-content {
+  padding: 2rem 1.5rem;
+}
+
+.hiw-intro {
+  font-size: 1.125rem;
+  line-height: 1.8;
+  margin-bottom: 3rem;
+  color: #3a2a1a;
+  font-style: italic;
+}
+
+.hiw-section {
+  margin-bottom: 4rem;
+}
+
+.hiw-heading {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #2a1a0a;
+  margin-bottom: 1.5rem;
+  border-bottom: 2px solid rgba(139, 90, 43, 0.3);
+  padding-bottom: 0.5rem;
+}
+
+.hiw-content h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #3a2a1a;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+}
+
+.hiw-content p {
+  line-height: 1.8;
+  margin-bottom: 1rem;
+  color: #4a3a2a;
+}
+
+.hiw-content ul,
+.hiw-content ol {
+  margin-left: 1.5rem;
+  margin-bottom: 1rem;
+  line-height: 1.8;
+  color: #4a3a2a;
+}
+
+.hiw-content li {
+  margin-bottom: 0.5rem;
+}
+
+.hiw-content code {
+  background: rgba(139, 90, 43, 0.1);
+  padding: 0.125rem 0.375rem;
+  border-radius: 3px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.9em;
+  color: #2a1a0a;
+}
+
+.hiw-content a {
+  color: #8b5a2b;
+  text-decoration: underline;
+  transition: color 0.2s;
+}
+
+.hiw-content a:hover {
+  color: #6a4520;
+}
+
+.hiw-content strong {
+  font-weight: 600;
+  color: #2a1a0a;
+}
+
+.hiw-github-link {
+  text-align: center;
+  font-size: 1.125rem;
+  margin: 1.5rem 0;
+}
+
+.hiw-github-link a {
+  font-family: 'Courier New', monospace;
+  font-weight: 600;
+}
+
+.hiw-cta {
+  background: rgba(139, 90, 43, 0.08);
+  border: 2px solid rgba(139, 90, 43, 0.2);
+  border-radius: 8px;
+  padding: 2rem;
+  text-align: center;
+}
+
+.hiw-cta .hiw-heading {
+  border-bottom: none;
+  margin-bottom: 1.5rem;
+}
+
+.hiw-cta-buttons {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.hiw-cta-button {
+  display: inline-block;
+  padding: 0.875rem 1.75rem;
+  background: linear-gradient(135deg, #8b5a2b 0%, #6a4520 100%);
+  color: #fff;
+  text-decoration: none;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 1rem;
+  transition: all 0.3s;
+  box-shadow: 0 2px 8px rgba(139, 90, 43, 0.3);
+}
+
+.hiw-cta-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(139, 90, 43, 0.4);
+  background: linear-gradient(135deg, #6a4520 0%, #5a3a18 100%);
+}
+
+@media (max-width: 768px) {
+  .how-it-works-content {
+    padding: 1.5rem 1rem;
+  }
+
+  .hiw-heading {
+    font-size: 1.5rem;
+  }
+
+  .hiw-content h3 {
+    font-size: 1.125rem;
+  }
+
+  .hiw-cta-buttons {
+    flex-direction: column;
+  }
+
+  .hiw-cta-button {
+    width: 100%;
+  }
+}

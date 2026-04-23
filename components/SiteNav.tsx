@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 const LINKS = [
   { href: '/',                 label: 'The Bornless Ritual' },
   { href: '/vessel-inquiry',   label: 'The Vessel Inquiry'  },
+  { href: '/how-it-works',     label: 'How It Works'        },
 ];
 
 export default function SiteNav() {
