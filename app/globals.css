@@ -657,6 +657,10 @@ body {
 .translation-prose.translation-line--active {
   opacity: 1;
   color: var(--ink-brown);
+  background: rgba(212, 165, 116, 0.15);
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-weight: 500;
 }
 
 .translation-prose {

@@ -54,14 +54,39 @@ interface PlayLineButtonProps {
   line: string;
   wordRefs: RefObject<(PhoneticWordHandle | null)[]>;
   originalWordSetters: RefObject<(OriginalWordSetters | null)[]>;
+  translationRef: RefObject<HTMLDivElement | null>;
 }
 
-function PlayLineButton({ line, wordRefs, originalWordSetters }: PlayLineButtonProps) {
+function PlayLineButton({ line, wordRefs, originalWordSetters, translationRef }: PlayLineButtonProps) {
   const isPlayingRef = useRef(false);
+  const abortRef = useRef<AbortController | null>(null);
+  const [playing, setPlaying] = useState(false);
+
+  const handleStop = useCallback(() => {
+    abortRef.current?.abort();
+    abortRef.current = null;
+    isPlayingRef.current = false;
+    setPlaying(false);
+    // Clear all highlights
+    wordRefs.current?.forEach(r => r?.highlight(false));
+    originalWordSetters.current?.forEach(s => s?.setHover(false));
+    if (translationRef.current) {
+      translationRef.current.classList.remove('translation-line--active');
+    }
+  }, [wordRefs, originalWordSetters, translationRef]);
 
   const handlePlay = useCallback(async () => {
     if (isPlayingRef.current || !line.trim()) return;
     isPlayingRef.current = true;
+    setPlaying(true);
+
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    // Highlight translation during playback
+    if (translationRef.current) {
+      translationRef.current.classList.add('translation-line--active');
+    }
 
     await playWordByWord(
       line,
@@ -69,20 +94,27 @@ function PlayLineButton({ line, wordRefs, originalWordSetters }: PlayLineButtonP
       (wordIdx, active) => {
         wordRefs.current?.[wordIdx]?.highlight(active);
         originalWordSetters.current?.[wordIdx]?.setHover(active);
-      }
+      },
+      controller.signal
     );
 
+    // Remove translation highlight
+    if (translationRef.current) {
+      translationRef.current.classList.remove('translation-line--active');
+    }
+
     isPlayingRef.current = false;
-  }, [line, wordRefs, originalWordSetters]);
+    setPlaying(false);
+  }, [line, wordRefs, originalWordSetters, translationRef]);
 
   return (
     <button
-      className="play-line-btn"
-      onClick={handlePlay}
-      aria-label={`Play: ${line.slice(0, 40)}`}
-      title="Play this line"
+      className={`play-line-btn${playing ? ' play-line-btn--playing' : ''}`}
+      onClick={playing ? handleStop : handlePlay}
+      aria-label={playing ? 'Stop playback' : `Play: ${line.slice(0, 40)}`}
+      title={playing ? 'Stop' : 'Play this line'}
     >
-      ▶
+      {playing ? '■' : '▶'}
     </button>
   );
 }
@@ -115,6 +147,7 @@ function VoxLine({
 
   const wordRefs = useRef(lineWordRefsMap.current.get(lineIndex)!);
   const originalWordSetters = useRef(lineOriginalSettersMap.current.get(lineIndex)!);
+  const translationRef = useRef<HTMLDivElement | null>(null);
 
   return (
     <div className="vox-line-pair">
@@ -140,7 +173,7 @@ function VoxLine({
       </div>
       {/* English translation — static, between Greek and phonetic */}
       {translationLine.trim() && (
-        <div className="translation-line vox-line-translation">
+        <div ref={translationRef} className="translation-line vox-line-translation">
           {translationLine}
         </div>
       )}
@@ -150,6 +183,7 @@ function VoxLine({
           line={phoneticLine}
           wordRefs={wordRefs}
           originalWordSetters={originalWordSetters}
+          translationRef={translationRef}
         />
         <span className="vox-line-text">
           {tokens.map((token, i) => (
@@ -200,6 +234,7 @@ function ProseLine({
 
   const wordRefs = useRef(lineWordRefsMap.current.get(lineIndex)!);
   const originalWordSetters = useRef(lineOriginalSettersMap.current.get(lineIndex)!);
+  const translationRef = useRef<HTMLParagraphElement | null>(null);
   let wordIdx = 0;
   let origWordIdx = 0;
 
@@ -228,7 +263,7 @@ function ProseLine({
       </p>
       {/* English translation — static, between Greek and phonetic */}
       {translationLine.trim() && (
-        <p className="ritual-prose translation-prose">{translationLine}</p>
+        <p ref={translationRef} className="ritual-prose translation-prose">{translationLine}</p>
       )}
       {/* Phonetic text with play button — smaller, beneath */}
       <div className="prose-line">
@@ -236,6 +271,7 @@ function ProseLine({
           line={phoneticLine}
           wordRefs={wordRefs}
           originalWordSetters={originalWordSetters}
+          translationRef={translationRef}
         />
         <p className="ritual-prose phonetic-prose prose-line-text">
           {rawPhoneticTokens.map((token, i) => {
