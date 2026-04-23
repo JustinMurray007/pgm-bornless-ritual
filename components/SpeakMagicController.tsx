@@ -48,6 +48,7 @@ export default function SpeakMagicController() {
   const [manualInput, setManualInput] = useState('');
   const [showManualInput, setShowManualInput] = useState(true); // Always show manual input option
   const [highlightManualInput, setHighlightManualInput] = useState(false); // Highlight when speech fails
+  const [isBraveBrowser, setIsBraveBrowser] = useState(false); // Detect Brave browser
   
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const recognitionRef = useRef<any>(null);
@@ -56,6 +57,14 @@ export default function SpeakMagicController() {
   const retryCountRef = useRef(0);
   const maxRetries = 2;
   const [useElevenLabsSTT, setUseElevenLabsSTT] = useState(false);
+
+  // Detect Brave browser on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'brave' in navigator) {
+      setIsBraveBrowser(true);
+      console.log('Brave browser detected - Web Speech API is blocked by design');
+    }
+  }, []);
 
   // Initialize speech recognition
   useEffect(() => {
@@ -106,21 +115,41 @@ export default function SpeakMagicController() {
           console.log(`Network error, retrying... (${retryCountRef.current}/${maxRetries})`);
           setFeedback(`🔄 Connection issue, retrying... (${retryCountRef.current}/${maxRetries})`);
           
-          // Wait for recognition to fully stop before retrying
+          // Ensure recognition is fully stopped before retrying
+          if (recognitionRef.current) {
+            try {
+              // Attempt to stop first to ensure clean state
+              recognitionRef.current.stop();
+            } catch (e) {
+              // Already stopped, which is what we want
+              console.log('Recognition already stopped');
+            }
+          }
+          
+          // Wait longer for recognition to fully stop before retrying (increased from 1500ms to 2000ms)
           setTimeout(() => {
             if (recognitionRef.current && !isListening) {
               try {
                 setIsListening(true);
                 recognitionRef.current.start();
               } catch (e) {
-                console.error('Retry failed:', e);
-                retryCountRef.current = 0;
-                setIsListening(false);
-                setFeedback('💡 Speech recognition unavailable. Use the text input below to practice.');
-                setHighlightManualInput(true);
+                // If InvalidStateError occurs, abort retry and switch to fallback
+                if (e instanceof DOMException && e.name === 'InvalidStateError') {
+                  console.error('Recognition in invalid state, switching to fallback');
+                  retryCountRef.current = maxRetries; // Force fallback
+                  setUseElevenLabsSTT(true);
+                  setFeedback('💡 Switching to backup speech recognition...');
+                  setHighlightManualInput(true);
+                } else {
+                  console.error('Retry failed:', e);
+                  retryCountRef.current = 0;
+                  setIsListening(false);
+                  setFeedback('💡 Speech recognition unavailable. Use the text input below to practice.');
+                  setHighlightManualInput(true);
+                }
               }
             }
-          }, 1500); // Longer delay to ensure recognition has fully stopped
+          }, 2000); // Increased delay to 2000ms for more reliable cleanup
           return;
         }
         
@@ -167,11 +196,37 @@ export default function SpeakMagicController() {
     }
 
     return () => {
+      // Cleanup recognition instance
       if (recognitionRef.current) {
         try {
           recognitionRef.current.stop();
+          recognitionRef.current.abort(); // Force abort
         } catch (e) {
           // Ignore errors on cleanup
+          console.log('Recognition cleanup (errors ignored)');
+        }
+      }
+      
+      // Cleanup media recorder
+      if (mediaRecorderRef.current) {
+        try {
+          if (mediaRecorderRef.current.state === 'recording') {
+            mediaRecorderRef.current.stop();
+          }
+        } catch (e) {
+          // Ignore errors on cleanup
+          console.log('MediaRecorder cleanup (errors ignored)');
+        }
+      }
+      
+      // Cleanup audio element
+      if (audioRef.current) {
+        try {
+          audioRef.current.pause();
+          audioRef.current.src = '';
+        } catch (e) {
+          // Ignore errors on cleanup
+          console.log('Audio cleanup (errors ignored)');
         }
       }
     };
@@ -303,7 +358,20 @@ export default function SpeakMagicController() {
       setFeedback('🎤 Requesting microphone access...');
       
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream);
+      
+      // Try to use a compatible audio format
+      let mimeType = 'audio/webm';
+      if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
+        mimeType = 'audio/webm;codecs=opus';
+      } else if (MediaRecorder.isTypeSupported('audio/ogg;codecs=opus')) {
+        mimeType = 'audio/ogg;codecs=opus';
+      } else if (MediaRecorder.isTypeSupported('audio/mp4')) {
+        mimeType = 'audio/mp4';
+      }
+      
+      console.log('Using MediaRecorder with mimeType:', mimeType);
+      
+      const mediaRecorder = new MediaRecorder(stream, { mimeType });
       mediaRecorderRef.current = mediaRecorder;
       audioChunksRef.current = [];
 
@@ -316,11 +384,16 @@ export default function SpeakMagicController() {
       mediaRecorder.onstop = async () => {
         setFeedback('🔄 Processing your speech...');
         
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
+        
+        console.log('Audio blob created:', {
+          size: audioBlob.size,
+          type: audioBlob.type,
+        });
         
         // Send to ElevenLabs STT API
         const formData = new FormData();
-        formData.append('audio', audioBlob);
+        formData.append('audio', audioBlob, 'recording.webm');
 
         try {
           const response = await fetch('/api/stt', {
@@ -329,7 +402,13 @@ export default function SpeakMagicController() {
           });
 
           if (!response.ok) {
-            throw new Error('STT request failed');
+            const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+            console.error('STT API error response:', {
+              status: response.status,
+              statusText: response.statusText,
+              error: errorData,
+            });
+            throw new Error(`STT request failed: ${response.status} - ${errorData.error || response.statusText}`);
           }
 
           const result = await response.json();
@@ -342,7 +421,9 @@ export default function SpeakMagicController() {
           }
         } catch (error) {
           console.error('ElevenLabs STT error:', error);
-          setFeedback('❌ Speech processing failed. Please try again.');
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+          setFeedback(`💡 Speech recognition unavailable. Please use the text input below to practice.`);
+          setHighlightManualInput(true);
         } finally {
           setIsListening(false);
           stream.getTracks().forEach(track => track.stop());
@@ -453,14 +534,35 @@ export default function SpeakMagicController() {
           >
             {isPlaying ? '🔊 Playing...' : '🔊 Listen'}
           </button>
-          <button
-            onClick={startListening}
-            disabled={isListening || isPlaying}
-            className={`speak-btn speak-btn-record${isListening ? ' speak-btn-record--active' : ''}`}
-          >
-            {isListening ? '🎤 Listening...' : '🎤 Speak'}
-          </button>
+          {!isBraveBrowser && (
+            <button
+              onClick={startListening}
+              disabled={isListening || isPlaying}
+              className={`speak-btn speak-btn-record${isListening ? ' speak-btn-record--active' : ''}`}
+            >
+              {isListening ? '🎤 Listening...' : '🎤 Speak'}
+            </button>
+          )}
         </div>
+
+        {isBraveBrowser && (
+          <div className="speak-browser-warning">
+            <p>
+              <strong>⚠️ Brave Browser Detected:</strong> The Web Speech API is blocked by Brave for privacy reasons.
+              Please use the text input below to practice pronunciation, or try a different browser (Chrome, Edge, Safari).
+            </p>
+            <p>
+              <a 
+                href="https://stackoverflow.com/questions/74113965/speechrecognition-emitting-network-error-event-in-brave-browser"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="speak-browser-warning-link"
+              >
+                Learn more about this limitation →
+              </a>
+            </p>
+          </div>
+        )}
 
         {useElevenLabsSTT && (
           <div className="speak-backup-notice">

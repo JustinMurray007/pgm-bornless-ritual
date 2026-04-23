@@ -650,6 +650,17 @@ body {
   line-height: 1.6;
   padding-left: 2.75rem;
   opacity: 0.72;
+  transition: opacity 0.3s ease, color 0.3s ease;
+}
+
+.vox-line-translation.translation-line--active,
+.translation-prose.translation-line--active {
+  opacity: 1;
+  color: var(--ink-brown);
+}
+
+.translation-prose {
+  transition: opacity 0.3s ease, color 0.3s ease;
 }
 
 .original-word {
@@ -1982,6 +1993,48 @@ body {
   font-weight: 600;
 }
 
+.speak-feedback--error {
+  background: rgba(204, 17, 0, 0.08);
+  border-color: rgba(204, 17, 0, 0.3);
+  color: #cc1100;
+}
+
+/* Brave Browser Warning */
+.speak-browser-warning {
+  background: rgba(204, 17, 0, 0.08);
+  border: 2px solid rgba(204, 17, 0, 0.3);
+  border-radius: 8px;
+  padding: 16px;
+  margin: 16px 0;
+  color: #2a1a0a;
+  text-align: left;
+}
+
+.speak-browser-warning p {
+  margin: 0 0 12px 0;
+  line-height: 1.6;
+}
+
+.speak-browser-warning p:last-child {
+  margin-bottom: 0;
+}
+
+.speak-browser-warning strong {
+  color: #cc1100;
+  font-weight: 600;
+}
+
+.speak-browser-warning-link {
+  color: #cc1100;
+  text-decoration: underline;
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
+
+.speak-browser-warning-link:hover {
+  color: #990c00;
+}
+
 .speak-manual-input {
   margin-top: 1rem;
   padding: 1rem;
@@ -1995,6 +2048,21 @@ body {
   background: rgba(255, 200, 100, 0.15);
   border-color: #d4a574;
   box-shadow: 0 0 0 3px rgba(212, 165, 116, 0.2);
+}
+
+.speak-manual-input--highlighted {
+  border-color: #cc1100;
+  box-shadow: 0 0 0 3px rgba(204, 17, 0, 0.15);
+  animation: input-highlight-pulse 2s ease-in-out 3;
+}
+
+@keyframes input-highlight-pulse {
+  0%, 100% { 
+    box-shadow: 0 0 0 3px rgba(204, 17, 0, 0.15);
+  }
+  50% { 
+    box-shadow: 0 0 0 5px rgba(204, 17, 0, 0.25);
+  }
 }
 
 .speak-manual-label {
