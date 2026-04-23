@@ -6,6 +6,7 @@ import RitualSection from '@/components/RitualSection';
 import PhoneticScriptController from '@/components/PhoneticScriptController';
 import LanguageDrawer from '@/components/LanguageDrawer';
 import RitualVoicePlayer from '@/components/RitualVoicePlayer';
+import PlayAllRitualButton from '@/components/PlayAllRitualButton';
 
 // Revalidate every 24 hours (content rarely changes)
 export const revalidate = 86400;
@@ -69,6 +70,11 @@ export default async function RitualPage() {
             hear it spoken. Use <span className="play-hint">▶</span> to play an entire
             line. Tap <strong>?</strong> next to a section title for the English translation.
           </p>
+          
+          {/* Play All Button */}
+          <div style={{ marginTop: '1.5rem', textAlign: 'center' }}>
+            <PlayAllRitualButton sections={sections} phoneticMap={phoneticMap} />
+          </div>
         </div>
 
         {usingFallback && (

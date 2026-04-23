@@ -30,7 +30,7 @@ export default function HowItWorksPage() {
               These ancient Greek magical rituals, silent on papyrus for over 1,700 years, are now vocalized through
               cutting-edge AI voice synthesis. Every barbarous name, every divine invocation, every word of power
               that once echoed through the temples of Greco-Roman Egypt can now be heard, felt, and experienced
-              in your browser. This is not just a translation — it is a resurrection of sound itself.
+              in your browser. This is not just a translation, it is a resurrection of sound itself.
             </p>
             <p className="hiw-intro">
               This project combines scholarly translation, modern AI voice synthesis, real-time audio analysis,
@@ -75,7 +75,7 @@ export default function HowItWorksPage() {
                 The English translations are based on <em>The Greek Magical Papyri in Translation</em>,
                 edited by Hans Dieter Betz (University of Chicago Press, 1986/1992), the standard
                 scholarly edition. The phonetic reconstructions are based on modern scholarly consensus
-                on ancient Greek pronunciation, with special attention to the <em>voces magicae</em> —
+                on ancient Greek pronunciation, with special attention to the <em>voces magicae</em>,
                 the "words of power" that blend Greek, Egyptian, Hebrew, and invented barbarous names.
               </p>
 

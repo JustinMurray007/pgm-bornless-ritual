@@ -46,7 +46,7 @@ export default function SpeakMagicController() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [completedWords, setCompletedWords] = useState<Set<number>>(new Set());
   const [manualInput, setManualInput] = useState('');
-  const [showManualInput, setShowManualInput] = useState(false);
+  const [showManualInput, setShowManualInput] = useState(true); // Always show manual input option
   
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const recognitionRef = useRef<any>(null);
@@ -93,18 +93,18 @@ export default function SpeakMagicController() {
         
         // Provide more specific error messages
         if (event.error === 'no-speech') {
-          setFeedback('⏱️ No speech detected. Click Speak and try again.');
+          setFeedback('⏱️ No speech detected. Try the text input below instead.');
         } else if (event.error === 'audio-capture') {
-          setFeedback('🎤 Microphone not found. Please check your microphone.');
+          setFeedback('🎤 Microphone not found. Use the text input below to practice.');
         } else if (event.error === 'not-allowed') {
-          setFeedback('🚫 Microphone permission denied. Please allow microphone access in your browser settings.');
+          setFeedback('🚫 Microphone permission denied. Use the text input below to practice.');
         } else if (event.error === 'network') {
-          setFeedback('🌐 Network error. Speech recognition requires an internet connection. Please check your connection and try again.');
+          setFeedback('💡 Speech recognition unavailable. Use the text input below to practice.');
         } else if (event.error === 'aborted') {
           // Don't show error for aborted - this is normal when we stop it
           console.log('Recognition aborted (normal)');
         } else {
-          setFeedback(`❌ Error: ${event.error}. Please try again.`);
+          setFeedback(`💡 Microphone unavailable. Use the text input below to practice.`);
         }
       };
 
@@ -221,8 +221,7 @@ export default function SpeakMagicController() {
 
   const startListening = () => {
     if (!recognitionRef.current) {
-      setFeedback('Speech recognition is not supported in your browser. Use the text input below instead.');
-      setShowManualInput(true);
+      setFeedback('💡 Speech recognition not available. Use the text input below to practice.');
       return;
     }
 
@@ -243,8 +242,7 @@ export default function SpeakMagicController() {
       } catch (error) {
         console.error('Error starting speech recognition:', error);
         setIsListening(false);
-        setFeedback('Could not start microphone. Try the text input below instead.');
-        setShowManualInput(true);
+        setFeedback('💡 Could not start microphone. Use the text input below to practice.');
       }
     }, 100);
   };
@@ -343,38 +341,27 @@ export default function SpeakMagicController() {
           </button>
         </div>
 
-        {/* Manual text input fallback */}
-        {showManualInput && (
-          <div className="speak-manual-input">
-            <p className="speak-manual-label">Or type what you hear:</p>
-            <div className="speak-manual-controls">
-              <input
-                type="text"
-                value={manualInput}
-                onChange={(e) => setManualInput(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleManualSubmit()}
-                placeholder="Type the pronunciation..."
-                className="speak-manual-text"
-              />
-              <button
-                onClick={handleManualSubmit}
-                disabled={!manualInput.trim()}
-                className="speak-manual-submit"
-              >
-                Check
-              </button>
-            </div>
+        {/* Manual text input - always visible */}
+        <div className="speak-manual-input">
+          <p className="speak-manual-label">Or type the pronunciation:</p>
+          <div className="speak-manual-controls">
+            <input
+              type="text"
+              value={manualInput}
+              onChange={(e) => setManualInput(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && handleManualSubmit()}
+              placeholder="Type the pronunciation..."
+              className="speak-manual-text"
+            />
+            <button
+              onClick={handleManualSubmit}
+              disabled={!manualInput.trim()}
+              className="speak-manual-submit"
+            >
+              Check
+            </button>
           </div>
-        )}
-
-        {!showManualInput && (
-          <button
-            onClick={() => setShowManualInput(true)}
-            className="speak-show-manual"
-          >
-            Having trouble with the microphone? Try text input
-          </button>
-        )}
+        </div>
 
         {feedback && (
           <div className={`speak-feedback${feedback.includes('Excellent') ? ' speak-feedback--success' : ''}`}>
