@@ -106,18 +106,21 @@ export default function SpeakMagicController() {
           console.log(`Network error, retrying... (${retryCountRef.current}/${maxRetries})`);
           setFeedback(`🔄 Connection issue, retrying... (${retryCountRef.current}/${maxRetries})`);
           
-          // Retry after a short delay
+          // Wait for recognition to fully stop before retrying
           setTimeout(() => {
-            if (recognitionRef.current) {
+            if (recognitionRef.current && !isListening) {
               try {
-                recognitionRef.current.start();
                 setIsListening(true);
+                recognitionRef.current.start();
               } catch (e) {
                 console.error('Retry failed:', e);
+                retryCountRef.current = 0;
+                setIsListening(false);
                 setFeedback('💡 Speech recognition unavailable. Use the text input below to practice.');
+                setHighlightManualInput(true);
               }
             }
-          }, 1000);
+          }, 1500); // Longer delay to ensure recognition has fully stopped
           return;
         }
         
@@ -135,13 +138,8 @@ export default function SpeakMagicController() {
           setFeedback('🚫 Microphone permission denied. Use the text input below to practice.');
           setHighlightManualInput(true);
         } else if (event.error === 'network') {
-          setFeedback('💡 Switching to backup speech recognition...');
+          setFeedback('💡 Speech recognition unavailable. Use the text input below to practice.');
           setHighlightManualInput(true);
-          // Switch to ElevenLabs STT
-          setUseElevenLabsSTT(true);
-          setTimeout(() => {
-            setFeedback('🎤 Ready! Click Speak to try again with backup system.');
-          }, 1500);
         } else if (event.error === 'aborted') {
           // Don't show error for aborted - this is normal when we stop it
           console.log('Recognition aborted (normal)');
@@ -153,7 +151,10 @@ export default function SpeakMagicController() {
 
       recognitionRef.current.onend = () => {
         console.log('Speech recognition ended');
-        setIsListening(false);
+        // Small delay before allowing new recognition to start
+        setTimeout(() => {
+          setIsListening(false);
+        }, 100);
       };
 
       recognitionRef.current.onspeechstart = () => {
