@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import FireDestruction from '@/components/FireDestruction';
 
 export const metadata: Metadata = {
   title: 'How It Works — The Bornless Ritual',
@@ -22,18 +23,18 @@ export default function HowItWorksPage() {
 
       <main className="ritual-page how-it-works-page">
         <div className="how-it-works-content">
-          {/* ── Introduction ── */}
+          {/* Introduction */}
           <section className="hiw-section">
             <p className="hiw-intro">
               This project brings ancient Greek magical rituals to life through a combination
               of scholarly translation, modern AI voice synthesis, real-time audio analysis,
-              and procedural visual design. Every element — from the papyrus texture to the
-              glowing text — is crafted to create an immersive experience that honors the
+              and procedural visual design. Every element, from the papyrus texture to the
+              glowing text, is crafted to create an immersive experience that honors the
               original texts while leveraging cutting-edge technology.
             </p>
           </section>
 
-          {/* ── The Source Material ── */}
+          {/* The Source Material */}
           <section className="hiw-section">
             <h2 className="hiw-heading">📜 The Source Material</h2>
             <div className="hiw-content">
@@ -50,7 +51,7 @@ export default function HowItWorksPage() {
               <p>
                 Also known as the <strong>Stele of Jeu the Hieroglyphist</strong> or the{' '}
                 <strong>Headless Rite</strong>, this ritual is an invocation of the "Headless One"
-                (Ἀκέφαλος, Akephalos) — a powerful deity who created heaven and earth. The ritual
+                (Ἀκέφαλος, Akephalos), a powerful deity who created heaven and earth. The ritual
                 combines Egyptian solar theology with Greek Neoplatonic philosophy and Jewish divine
                 names, creating a syncretic magical practice typical of Greco-Roman Egypt.
               </p>
@@ -376,6 +377,8 @@ export default function HowItWorksPage() {
           </p>
         </footer>
       </main>
+
+      <FireDestruction />
     </>
   );
 }

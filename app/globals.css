@@ -1394,3 +1394,155 @@ body {
     width: 100%;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Fire Destruction Effect
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.fire-trigger {
+  height: 1px;
+  width: 100%;
+  pointer-events: none;
+}
+
+.fire-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.5s ease-in;
+}
+
+.fire-overlay--active {
+  opacity: 1;
+}
+
+.fire-flames {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 100%;
+  background: linear-gradient(
+    to top,
+    rgba(255, 69, 0, 0.9) 0%,
+    rgba(255, 140, 0, 0.7) 20%,
+    rgba(255, 215, 0, 0.5) 40%,
+    transparent 70%
+  );
+  animation: flamesRise 3s ease-out forwards;
+}
+
+@keyframes flamesRise {
+  0% {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.fire-smoke {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(50, 50, 50, 0.3) 0%,
+    rgba(30, 30, 30, 0.6) 50%,
+    rgba(0, 0, 0, 0.9) 100%
+  );
+  animation: smokeRise 3s ease-out forwards;
+  animation-delay: 1s;
+  opacity: 0;
+}
+
+@keyframes smokeRise {
+  0% {
+    opacity: 0;
+    transform: translateY(20%);
+  }
+  50% {
+    opacity: 0.8;
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.void-overlay {
+  position: fixed;
+  inset: 0;
+  background: #000;
+  z-index: 9999;
+  opacity: 0;
+  transition: opacity 1s ease-in;
+  pointer-events: none;
+}
+
+.void-overlay--complete {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.escape-container {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 10000;
+  animation: escapeGlow 2s ease-in-out infinite;
+}
+
+@keyframes escapeGlow {
+  0%, 100% {
+    filter: drop-shadow(0 0 20px rgba(255, 0, 0, 0.8))
+            drop-shadow(0 0 40px rgba(255, 0, 0, 0.6))
+            drop-shadow(0 0 60px rgba(255, 0, 0, 0.4));
+  }
+  50% {
+    filter: drop-shadow(0 0 30px rgba(255, 0, 0, 1))
+            drop-shadow(0 0 60px rgba(255, 0, 0, 0.8))
+            drop-shadow(0 0 90px rgba(255, 0, 0, 0.6));
+  }
+}
+
+.escape-link {
+  font-size: 3rem;
+  font-weight: 900;
+  color: #ff0000;
+  text-shadow: 
+    0 0 10px rgba(255, 0, 0, 1),
+    0 0 20px rgba(255, 0, 0, 0.8),
+    0 0 30px rgba(255, 0, 0, 0.6),
+    0 0 40px rgba(255, 0, 0, 0.4);
+  background: none;
+  border: none;
+  cursor: pointer;
+  letter-spacing: 0.5rem;
+  transition: all 0.3s;
+  font-family: serif;
+}
+
+.escape-link:hover {
+  color: #ff3333;
+  transform: scale(1.1);
+  text-shadow: 
+    0 0 15px rgba(255, 0, 0, 1),
+    0 0 30px rgba(255, 0, 0, 1),
+    0 0 45px rgba(255, 0, 0, 0.8),
+    0 0 60px rgba(255, 0, 0, 0.6);
+}
+
+@media (max-width: 768px) {
+  .escape-link {
+    font-size: 2rem;
+    letter-spacing: 0.3rem;
+  }
+}
