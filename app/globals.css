@@ -156,8 +156,85 @@ body {
 }
 
 @media (max-width: 900px) {
-  .page-title-bar { padding: 2rem 2rem 1.5rem; }
-  .ritual-page { padding: 2rem 1.25rem 5rem; }
+  .page-title-bar { 
+    padding: 1.5rem 1.5rem 1.25rem; 
+  }
+  .ritual-page { 
+    padding: 1.5rem 1rem 4rem; 
+  }
+  
+  /* Mobile navigation */
+  .site-nav {
+    padding: 0.5rem 1rem;
+  }
+  
+  .site-nav-list {
+    gap: 1rem;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  
+  .site-nav-link {
+    font-size: 0.65rem;
+    padding: 0.25rem 0;
+  }
+  
+  /* Mobile title */
+  .ritual-title {
+    font-size: 2rem;
+    letter-spacing: 0.06em;
+  }
+  
+  .ritual-subtitle {
+    font-size: 0.85rem;
+  }
+  
+  /* Mobile text sizing */
+  .original-line {
+    font-size: 1.25rem;
+    padding-left: 1.5rem;
+  }
+  
+  .original-prose {
+    font-size: 1.1rem;
+    padding-left: 1.5rem;
+  }
+  
+  .translation-prose {
+    font-size: 0.8rem;
+    padding-left: 0.5rem;
+    margin-left: 1.5rem;
+  }
+  
+  .phonetic-prose {
+    font-size: 0.75rem;
+  }
+  
+  /* Mobile voce magica */
+  .voce-magica {
+    font-size: 1.1em;
+  }
+  
+  /* Mobile play buttons */
+  .play-line-btn {
+    width: 1.75rem;
+    height: 1.75rem;
+    font-size: 0.6rem;
+  }
+  
+  /* Mobile drawer trigger */
+  .drawer-trigger {
+    width: 4rem;
+    height: 4rem;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    font-size: 1.8rem;
+  }
+  
+  /* Mobile drawer */
+  .drawer {
+    width: 100%;
+  }
 }
 
 /* ─── Title bar typography ───────────────────────────────────────────────── */
@@ -1395,24 +1472,41 @@ body {
 }
 
 @media (max-width: 768px) {
+  /* How It Works mobile */
   .how-it-works-content {
-    padding: 1.5rem 1rem;
+    padding: 1rem 0.75rem;
   }
 
   .hiw-heading {
-    font-size: 1.5rem;
+    font-size: 1.4rem;
+    margin-bottom: 1rem;
   }
 
   .hiw-content h3 {
-    font-size: 1.125rem;
+    font-size: 1.1rem;
+    margin-top: 1.5rem;
+  }
+  
+  .hiw-content p,
+  .hiw-content li {
+    font-size: 0.95rem;
   }
 
   .hiw-cta-buttons {
     flex-direction: column;
+    gap: 0.75rem;
   }
 
   .hiw-cta-button {
     width: 100%;
+    padding: 0.75rem 1.5rem;
+    font-size: 0.95rem;
+  }
+  
+  /* Mobile intro text */
+  .hiw-intro {
+    font-size: 1rem;
+    margin-bottom: 2rem;
   }
 }
 
@@ -1894,6 +1988,13 @@ body {
   background: rgba(139, 90, 43, 0.08);
   border: 1px solid var(--border-ink);
   border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.speak-manual-input--highlight {
+  background: rgba(255, 200, 100, 0.15);
+  border-color: #d4a574;
+  box-shadow: 0 0 0 3px rgba(212, 165, 116, 0.2);
 }
 
 .speak-manual-label {
@@ -1953,6 +2054,69 @@ body {
 .speak-manual-submit:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* Experimental voice input section */
+.speak-experimental {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background: rgba(139, 90, 43, 0.05);
+  border: 1px dashed var(--border-ink);
+  border-radius: 8px;
+}
+
+.speak-experimental details {
+  cursor: pointer;
+}
+
+.speak-experimental summary {
+  font-size: 0.9rem;
+  color: var(--ink-mid);
+  font-weight: 600;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  user-select: none;
+}
+
+.speak-experimental summary::-webkit-details-marker {
+  display: none;
+}
+
+.speak-experimental summary::before {
+  content: '▶';
+  font-size: 0.7rem;
+  transition: transform 0.2s;
+}
+
+.speak-experimental details[open] summary::before {
+  transform: rotate(90deg);
+}
+
+.speak-experimental-note {
+  margin-top: 0.75rem;
+  font-size: 0.85rem;
+  color: var(--ink-mid);
+  opacity: 0.8;
+  line-height: 1.5;
+}
+
+/* Backup STT notice */
+.speak-backup-notice {
+  margin-top: 1rem;
+  padding: 0.75rem 1rem;
+  background: rgba(100, 200, 100, 0.1);
+  border: 1px solid rgba(100, 200, 100, 0.3);
+  border-radius: 6px;
+  text-align: center;
+}
+
+.speak-backup-notice p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--ink-mid);
+  font-weight: 600;
 }
 
 .speak-show-manual {
@@ -2074,39 +2238,124 @@ body {
 }
 
 @media (max-width: 768px) {
+  /* Speak the Magic mobile */
   .speak-stage-selector {
     flex-direction: column;
+    gap: 0.75rem;
   }
 
   .speak-stage-btn {
     width: 100%;
+    padding: 0.65rem 1.5rem;
+    font-size: 0.9rem;
   }
 
   .speak-card {
-    padding: 2rem 1.5rem;
+    padding: 1.5rem 1rem;
   }
 
   .speak-greek {
-    font-size: 2.5rem;
+    font-size: 2.25rem;
   }
 
   .speak-phonetic {
-    font-size: 1.25rem;
+    font-size: 1.15rem;
+  }
+  
+  .speak-translation {
+    font-size: 0.9rem;
   }
 
   .speak-controls {
     flex-direction: column;
+    gap: 0.75rem;
   }
 
   .speak-btn {
     width: 100%;
+    padding: 0.85rem 2rem;
+    font-size: 0.95rem;
   }
 
   .speak-navigation {
     flex-direction: column;
+    gap: 0.75rem;
   }
 
   .speak-nav-btn {
     width: 100%;
+  }
+  
+  .speak-nav-btn-next {
+    padding: 0.65rem 1.75rem;
+    font-size: 0.9rem;
+  }
+  
+  /* Mobile manual input */
+  .speak-manual-input {
+    padding: 0.85rem;
+  }
+  
+  .speak-manual-text {
+    font-size: 0.9rem;
+    padding: 0.65rem 0.85rem;
+  }
+  
+  .speak-manual-submit {
+    padding: 0.65rem 1.5rem;
+    font-size: 0.85rem;
+  }
+  
+  /* Mobile instructions */
+  .speak-instructions {
+    padding: 1.25rem 1rem;
+  }
+  
+  .speak-instructions h3 {
+    font-size: 1rem;
+  }
+  
+  .speak-instructions ol,
+  .speak-instructions li {
+    font-size: 0.9rem;
+  }
+}
+
+/* Extra small mobile devices */
+@media (max-width: 480px) {
+  .ritual-title {
+    font-size: 1.75rem;
+  }
+  
+  .site-nav-list {
+    gap: 0.75rem;
+  }
+  
+  .site-nav-link {
+    font-size: 0.6rem;
+  }
+  
+  .speak-greek {
+    font-size: 2rem;
+  }
+  
+  .speak-phonetic {
+    font-size: 1rem;
+  }
+  
+  .drawer-trigger {
+    width: 3.5rem;
+    height: 3.5rem;
+    bottom: 1rem;
+    right: 1rem;
+    font-size: 1.6rem;
+  }
+  
+  .original-line {
+    font-size: 1.1rem;
+  }
+  
+  .original-prose {
+    font-size: 1rem;
   }
 }

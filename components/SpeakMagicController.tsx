@@ -47,11 +47,15 @@ export default function SpeakMagicController() {
   const [completedWords, setCompletedWords] = useState<Set<number>>(new Set());
   const [manualInput, setManualInput] = useState('');
   const [showManualInput, setShowManualInput] = useState(true); // Always show manual input option
+  const [highlightManualInput, setHighlightManualInput] = useState(false); // Highlight when speech fails
   
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const recognitionRef = useRef<any>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
   const retryCountRef = useRef(0);
   const maxRetries = 2;
+  const [useElevenLabsSTT, setUseElevenLabsSTT] = useState(false);
 
   // Initialize speech recognition
   useEffect(() => {
@@ -123,17 +127,27 @@ export default function SpeakMagicController() {
         // Provide more specific error messages
         if (event.error === 'no-speech') {
           setFeedback('⏱️ No speech detected. Try the text input below instead.');
+          setHighlightManualInput(true);
         } else if (event.error === 'audio-capture') {
           setFeedback('🎤 Microphone not found. Use the text input below to practice.');
+          setHighlightManualInput(true);
         } else if (event.error === 'not-allowed') {
           setFeedback('🚫 Microphone permission denied. Use the text input below to practice.');
+          setHighlightManualInput(true);
         } else if (event.error === 'network') {
-          setFeedback('💡 Speech recognition unavailable. Use the text input below to practice.');
+          setFeedback('💡 Switching to backup speech recognition...');
+          setHighlightManualInput(true);
+          // Switch to ElevenLabs STT
+          setUseElevenLabsSTT(true);
+          setTimeout(() => {
+            setFeedback('🎤 Ready! Click Speak to try again with backup system.');
+          }, 1500);
         } else if (event.error === 'aborted') {
           // Don't show error for aborted - this is normal when we stop it
           console.log('Recognition aborted (normal)');
         } else {
           setFeedback(`💡 Microphone unavailable. Use the text input below to practice.`);
+          setHighlightManualInput(true);
         }
       };
 
@@ -248,14 +262,16 @@ export default function SpeakMagicController() {
     }
   };
 
-  const startListening = () => {
-    if (!recognitionRef.current) {
-      setFeedback('💡 Speech recognition not available. Use the text input below to practice.');
+  const startListening = async () => {
+    // If Web Speech API failed, use ElevenLabs STT
+    if (useElevenLabsSTT || !recognitionRef.current) {
+      await startElevenLabsRecording();
       return;
     }
 
-    // Reset retry count when user manually starts
+    // Reset retry count and highlight when user manually starts
     retryCountRef.current = 0;
+    setHighlightManualInput(false);
 
     // Stop any existing recognition
     try {
@@ -274,9 +290,81 @@ export default function SpeakMagicController() {
       } catch (error) {
         console.error('Error starting speech recognition:', error);
         setIsListening(false);
-        setFeedback('💡 Could not start microphone. Use the text input below to practice.');
+        setFeedback('💡 Switching to backup speech recognition...');
+        setUseElevenLabsSTT(true);
+        setHighlightManualInput(true);
       }
     }, 100);
+  };
+
+  const startElevenLabsRecording = async () => {
+    try {
+      setFeedback('🎤 Requesting microphone access...');
+      
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+
+      mediaRecorder.onstop = async () => {
+        setFeedback('🔄 Processing your speech...');
+        
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        
+        // Send to ElevenLabs STT API
+        const formData = new FormData();
+        formData.append('audio', audioBlob);
+
+        try {
+          const response = await fetch('/api/stt', {
+            method: 'POST',
+            body: formData,
+          });
+
+          if (!response.ok) {
+            throw new Error('STT request failed');
+          }
+
+          const result = await response.json();
+          const transcript = result.transcript?.toLowerCase().trim() || '';
+
+          if (transcript) {
+            handleSpeechResult(transcript);
+          } else {
+            setFeedback('⏱️ Could not hear you clearly. Please try again.');
+          }
+        } catch (error) {
+          console.error('ElevenLabs STT error:', error);
+          setFeedback('❌ Speech processing failed. Please try again.');
+        } finally {
+          setIsListening(false);
+          stream.getTracks().forEach(track => track.stop());
+        }
+      };
+
+      mediaRecorder.start();
+      setIsListening(true);
+      setFeedback('🎤 Listening... Speak now! (Recording for 5 seconds)');
+
+      // Auto-stop after 5 seconds
+      setTimeout(() => {
+        if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+          mediaRecorderRef.current.stop();
+        }
+      }, 5000);
+
+    } catch (error) {
+      console.error('Error accessing microphone:', error);
+      setIsListening(false);
+      setFeedback('🚫 Could not access microphone. Please check permissions.');
+      setHighlightManualInput(true);
+    }
   };
 
   const handleManualSubmit = () => {
@@ -373,27 +461,11 @@ export default function SpeakMagicController() {
           </button>
         </div>
 
-        {/* Manual text input - always visible */}
-        <div className="speak-manual-input">
-          <p className="speak-manual-label">Or type the pronunciation:</p>
-          <div className="speak-manual-controls">
-            <input
-              type="text"
-              value={manualInput}
-              onChange={(e) => setManualInput(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleManualSubmit()}
-              placeholder="Type the pronunciation..."
-              className="speak-manual-text"
-            />
-            <button
-              onClick={handleManualSubmit}
-              disabled={!manualInput.trim()}
-              className="speak-manual-submit"
-            >
-              Check
-            </button>
+        {useElevenLabsSTT && (
+          <div className="speak-backup-notice">
+            <p>✨ Using backup speech recognition (ElevenLabs)</p>
           </div>
-        </div>
+        )}
 
         {feedback && (
           <div className={`speak-feedback${feedback.includes('Excellent') ? ' speak-feedback--success' : ''}`}>
@@ -425,12 +497,12 @@ export default function SpeakMagicController() {
         <ol>
           <li>Click <strong>🔊 Listen</strong> to hear the correct pronunciation</li>
           <li>Click <strong>🎤 Speak</strong> and pronounce the word clearly into your microphone</li>
-          <li>Or use the text input below to type the pronunciation</li>
           <li>Receive instant feedback on your pronunciation</li>
+          <li>Keep practicing until you master each word!</li>
         </ol>
         <p className="speak-instructions-note">
-          <strong>Tip:</strong> Speech recognition works best in Chrome or Edge browsers with a stable internet connection.
-          If the microphone button doesn't work, use the text input instead - it works just as well!
+          <strong>Tip:</strong> If speech recognition has connection issues, the system will automatically
+          switch to a backup service. Speak clearly and emphasize each syllable for best results.
         </p>
       </div>
     </div>

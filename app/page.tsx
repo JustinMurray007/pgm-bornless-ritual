@@ -2,39 +2,15 @@ import { getSupabaseServerClient } from '@/lib/supabase/server';
 import { FALLBACK_SECTIONS } from '@/lib/ritualText';
 import { FALLBACK_PHONETICS } from '@/lib/phonetics';
 import { RitualSection as RitualSectionType, PhoneticMap } from '@/lib/types';
-import RitualSection from '@/components/RitualSection';
-import PhoneticScriptController from '@/components/PhoneticScriptController';
 import LanguageDrawer from '@/components/LanguageDrawer';
 import RitualVoicePlayer from '@/components/RitualVoicePlayer';
-import PlayAllRitualButton from '@/components/PlayAllRitualButton';
+import PhoneticScriptController from '@/components/PhoneticScriptController';
+import BornlessRitualController from '@/components/BornlessRitualController';
 
 // Revalidate every 24 hours (content rarely changes)
 export const revalidate = 86400;
 
 export default async function RitualPage() {
-  let sections: RitualSectionType[] = FALLBACK_SECTIONS;
-  let phoneticMap: PhoneticMap = FALLBACK_PHONETICS;
-  let usingFallback = false;
-
-  try {
-    const supabase = getSupabaseServerClient();
-    const [sectionsResult, phoneticsResult] = await Promise.all([
-      supabase.from('ritual_sections').select('*').order('sort_order', { ascending: true }),
-      supabase.from('phonetic_mappings').select('*'),
-    ]);
-    if (sectionsResult.error) throw sectionsResult.error;
-    if (phoneticsResult.error) throw phoneticsResult.error;
-    if (sectionsResult.data?.length) sections = sectionsResult.data as RitualSectionType[];
-    if (phoneticsResult.data?.length) {
-      phoneticMap = Object.fromEntries(
-        phoneticsResult.data.map((m: { original: string; phonetic: string }) => [m.original, m.phonetic])
-      );
-    }
-  } catch (error) {
-    console.error('[RitualPage] Supabase fetch failed, using fallback content:', error);
-    usingFallback = true;
-  }
-
   return (
     <>
       <div className="papyrus-bg" aria-hidden="true" />
@@ -55,37 +31,24 @@ export default async function RitualPage() {
 
         <div className="ritual-intro">
           <p>
-            Below is the original Greek text of PGM V. 96-172 — the Stele of Jeu the
-            Hieroglyphist — drawn from the <em>Greek Magical Papyri</em>, a collection
+            Below is the original Greek text of PGM V. 96-172, the Stele of Jeu the
+            Hieroglyphist, drawn from the <em>Greek Magical Papyri</em>, a collection
             spanning the 2nd century BCE to the 5th century CE, buried in the Egyptian
             desert and rediscovered in the 19th century.
           </p>
           <p>
-            The <strong>Bornless Ritual</strong> calls upon the Ἀκέφαλος (Akephalos) —
-            the Headless One — using <em>voces magicae</em>: barbarous words of power
+            The <strong>Bornless Ritual</strong> calls upon the Ἀκέφαλος (Akephalos),
+            the Headless One, using <em>voces magicae</em>: barbarous words of power
             whose potency was believed to reside in their sound alone.
           </p>
           <p className="ritual-intro-how">
             <strong>How to use:</strong> Hover or click any <span className="voce-magica" style={{fontSize: '1em', letterSpacing: '0.05em', cursor: 'default'}}>highlighted word</span> to
             hear it spoken. Use <span className="play-hint">▶</span> to play an entire
-            line. Tap <strong>?</strong> next to a section title for the English translation.
+            line. Tap the <strong>Language Breakdown</strong> button (top right) to learn about the ancient languages used.
           </p>
-          
-          {/* Play All Button */}
-          <div style={{ marginTop: '1.5rem', textAlign: 'center' }}>
-            <PlayAllRitualButton sections={sections} phoneticMap={phoneticMap} />
-          </div>
         </div>
 
-        {usingFallback && (
-          <p role="status" className="fallback-notice">
-            ⚠ Displaying local content (database unavailable)
-          </p>
-        )}
-
-        {sections.map((section) => (
-          <RitualSection key={section.slug} section={section} phoneticMap={phoneticMap} />
-        ))}
+        <BornlessRitualController />
 
         <footer className="ritual-footer">
           <p>Source: <em>Greek Magical Papyri in Translation</em>, ed. Hans Dieter Betz (1986)</p>
@@ -103,8 +66,8 @@ export default async function RitualPage() {
 
         <div className="ritual-intro">
           <p>
-            Experience the ritual as a layered vocal performance. Three voices — the Narrator,
-            the Shadow, and the Harmonic — speak in unison, overlap, and fade, creating an
+            Experience the ritual as a layered vocal performance. Three voices, the Narrator,
+            the Shadow, and the Harmonic, speak in unison, overlap, and fade, creating an
             immersive soundscape that evokes the crowded ritual chambers of ancient Egypt.
           </p>
           <p className="ritual-intro-how">
