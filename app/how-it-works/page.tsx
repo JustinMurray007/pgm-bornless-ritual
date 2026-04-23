@@ -26,11 +26,17 @@ export default function HowItWorksPage() {
           {/* Introduction */}
           <section className="hiw-section">
             <p className="hiw-intro">
-              This project brings ancient Greek magical rituals to life through a combination
-              of scholarly translation, modern AI voice synthesis, real-time audio analysis,
-              and procedural visual design. Every element, from the papyrus texture to the
-              glowing text, is crafted to create an immersive experience that honors the
-              original texts while leveraging cutting-edge technology.
+              For the first time in nearly two millennia, <strong>the oldest written magic in the world</strong> speaks again.
+              These ancient Greek magical rituals, silent on papyrus for over 1,700 years, are now vocalized through
+              cutting-edge AI voice synthesis. Every barbarous name, every divine invocation, every word of power
+              that once echoed through the temples of Greco-Roman Egypt can now be heard, felt, and experienced
+              in your browser. This is not just a translation — it is a resurrection of sound itself.
+            </p>
+            <p className="hiw-intro">
+              This project combines scholarly translation, modern AI voice synthesis, real-time audio analysis,
+              and procedural visual design to create an immersive experience that honors the original texts
+              while leveraging cutting-edge technology. Every element, from the papyrus texture to the
+              glowing text, is crafted to transport you to the world of ancient magical practice.
             </p>
           </section>
 
@@ -72,6 +78,39 @@ export default function HowItWorksPage() {
                 on ancient Greek pronunciation, with special attention to the <em>voces magicae</em> —
                 the "words of power" that blend Greek, Egyptian, Hebrew, and invented barbarous names.
               </p>
+
+              <h3>The Languages of Ancient Magic</h3>
+              <p>
+                The PGM texts are a linguistic tapestry, weaving together multiple ancient languages
+                and magical traditions:
+              </p>
+              <ul>
+                <li>
+                  <strong>Ancient Greek</strong> (Ἑλληνική): The primary language of the rituals,
+                  written in the Koine dialect spoken across the Hellenistic world. Greek provides
+                  the grammatical structure and narrative framework for most spells.
+                </li>
+                <li>
+                  <strong>Demotic Egyptian</strong> (Egyptian): The everyday script of ancient Egypt,
+                  used for native Egyptian spells and invocations to Egyptian deities like Ra, Thoth,
+                  and Anubis. Many Greek spells include Egyptian loan words transliterated into Greek letters.
+                </li>
+                <li>
+                  <strong>Coptic</strong> (Ⲙⲉⲧⲣⲉⲙ̀ⲛⲭⲏⲙⲓ): The final stage of the Egyptian language, written
+                  in Greek letters with additional characters. Coptic appears in later PGM texts and
+                  Christian-influenced spells.
+                </li>
+                <li>
+                  <strong>Hebrew/Aramaic</strong> (עברית): Jewish divine names and biblical phrases
+                  appear throughout the PGM, especially variations of the Tetragrammaton (YHWH) rendered
+                  as ΙΑΩ (Iao), ΣΑΒΑΩΘ (Sabaoth), and ΑΔΩΝΑΙ (Adonai).
+                </li>
+                <li>
+                  <strong>Voces Magicae</strong> (Barbarous Names): Invented or corrupted divine names
+                  that defy translation — ΑΒΛΑΝΑΘΑΝΑΛΒΑ, ΑΚΡΑΜΜΑΧΑΜΑΡΕΙ, ΣΕΜΕΣΙΛΑΜ. These "words of power"
+                  were believed to hold intrinsic magical force through their sound alone, regardless of meaning.
+                </li>
+              </ul>
             </div>
           </section>
 
@@ -366,7 +405,13 @@ export default function HowItWorksPage() {
               <Link href="/vessel-inquiry" className="hiw-cta-button">
                 The Vessel Inquiry
               </Link>
+              <Link href="/speak-the-magic" className="hiw-cta-button hiw-cta-button--highlight">
+                🎤 Speak the Magic
+              </Link>
             </div>
+            <p style={{ textAlign: 'center', marginTop: '1.5rem', fontSize: '0.95rem', fontStyle: 'italic', color: 'var(--ink-mid)' }}>
+              Ready to speak ancient words of power yourself? Try our interactive pronunciation practice!
+            </p>
           </section>
         </div>
 

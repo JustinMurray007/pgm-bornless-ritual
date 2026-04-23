@@ -22,6 +22,13 @@ The Lekanomanteia (λεκανομαντεία, *leh-kah-noh-man-TAY-ah*) — a w
 ### How It Works (`/how-it-works`)
 Comprehensive documentation covering the source material (Greek Magical Papyri), ElevenLabs AI voice technology, procedural design techniques, Kiro AI-powered development workflow, property-based testing, and the complete technical stack. Includes links to the open-source repository and development artifacts.
 
+### Speak the Magic (`/speak-the-magic`)
+Interactive pronunciation practice for *voces magicae* from the Greek Magical Papyri. Two modes:
+- **Practice Words** — 8 individual words of power with difficulty levels (easy/medium/hard). Listen to correct pronunciation, speak into your microphone, and receive instant feedback.
+- **Challenge Phrases** — Complete invocations unlocked after mastering 60% of practice words.
+
+Uses Web Speech API for speech recognition (Chrome/Edge recommended). Each word includes Greek text, phonetic spelling, and English translation.
+
 ## Script Modules
 
 | File | Purpose |
