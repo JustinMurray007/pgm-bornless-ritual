@@ -22,9 +22,26 @@ const notoSerif = Noto_Serif({
 });
 
 export const metadata: Metadata = {
-  title: 'Bornless Ritual — PGM V. 96-172',
+  title: 'Digital Grimoire — Ancient Greek Magical Rituals',
   description:
-    'A digital reconstruction of the Stele of Jeu the Hieroglyphist from the Greek Magical Papyri',
+    'Experience the Greek Magical Papyri brought to life with AI voice synthesis. Explore the Bornless Ritual, Vessel Inquiry, and learn to speak ancient words of power.',
+  keywords: ['Greek Magical Papyri', 'PGM', 'Bornless Ritual', 'ancient magic', 'grimoire', 'occult', 'Hellenistic magic'],
+  authors: [{ name: 'Digital Grimoire' }],
+  openGraph: {
+    title: 'Digital Grimoire — Ancient Greek Magical Rituals',
+    description: 'Experience the Greek Magical Papyri brought to life with AI voice synthesis',
+    type: 'website',
+    locale: 'en_US',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Digital Grimoire — Ancient Greek Magical Rituals',
+    description: 'Experience the Greek Magical Papyri brought to life with AI voice synthesis',
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function RootLayout({

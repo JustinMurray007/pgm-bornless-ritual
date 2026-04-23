@@ -7,6 +7,9 @@ import PhoneticScriptController from '@/components/PhoneticScriptController';
 import LanguageDrawer from '@/components/LanguageDrawer';
 import RitualVoicePlayer from '@/components/RitualVoicePlayer';
 
+// Revalidate every 24 hours (content rarely changes)
+export const revalidate = 86400;
+
 export default async function RitualPage() {
   let sections: RitualSectionType[] = FALLBACK_SECTIONS;
   let phoneticMap: PhoneticMap = FALLBACK_PHONETICS;

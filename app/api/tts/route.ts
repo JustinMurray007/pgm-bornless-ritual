@@ -1,7 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { validateEnv } from '@/lib/env';
+import { rateLimit } from '@/lib/rateLimit';
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
+  // Rate limiting: 20 requests per minute per IP
+  const ip = request.headers.get('x-forwarded-for') ?? request.headers.get('x-real-ip') ?? 'unknown';
+  const rateLimitResult = rateLimit(ip, 20, 60000);
+
+  if (!rateLimitResult.success) {
+    return NextResponse.json(
+      { error: 'Too many requests. Please try again in a minute.' },
+      { 
+        status: 429,
+        headers: {
+          'Retry-After': '60',
+          'X-RateLimit-Remaining': '0'
+        }
+      }
+    );
+  }
+
   try {
     validateEnv();
   } catch (error) {
@@ -24,6 +42,15 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
   if (!text || typeof text !== 'string' || text.trim() === '') {
     return NextResponse.json({ error: 'Missing required field: text' }, { status: 400 });
+  }
+
+  // Limit text length to prevent abuse (ElevenLabs charges per character)
+  const MAX_TEXT_LENGTH = 500; // Reasonable for single words/phrases
+  if (text.length > MAX_TEXT_LENGTH) {
+    return NextResponse.json(
+      { error: `Text too long. Maximum ${MAX_TEXT_LENGTH} characters allowed.` },
+      { status: 400 }
+    );
   }
 
   if (!voiceId || typeof voiceId !== 'string' || voiceId.trim() === '') {
@@ -81,7 +108,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     status: 200,
     headers: {
       'Content-Type': 'audio/mpeg',
-      'Cache-Control': 'no-store',
+      'Cache-Control': 'public, max-age=31536000, immutable', // Cache for 1 year
       'Transfer-Encoding': 'chunked',
     },
   });

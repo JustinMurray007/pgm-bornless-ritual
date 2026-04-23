@@ -149,7 +149,11 @@ export default function SpeakMagicController() {
     if (matchPercentage >= 60) {
       setFeedback('✨ Excellent! You spoke the word of power correctly!');
       if (stage === 'practice') {
-        setCompletedWords(prev => new Set([...prev, currentWordIndex]));
+        setCompletedWords(prev => {
+          const newSet = new Set(prev);
+          newSet.add(currentWordIndex);
+          return newSet;
+        });
       }
     } else if (matchPercentage >= 30) {
       setFeedback('🔮 Good attempt! Try emphasizing each syllable more clearly.');
