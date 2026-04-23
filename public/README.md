@@ -11,13 +11,16 @@ Recommended: save at ~1920px wide, JPEG quality 85.
 
 A Next.js 14 (App Router) web application that digitally reconstructs two rituals from the **Greek Magical Papyri** (PGM). Each ritual is rendered in Greek/Coptic script over a procedural papyrus background, with phonetically accurate audio playback via ElevenLabs TTS and real-time audio-driven glow animations.
 
-## Rituals
+## Pages
 
 ### The Bornless Ritual — PGM V. 96-172 (`/`)
 The Stele of Jeu the Hieroglyphist. Five sections: Opening, Invocation of Moses, Headless Invocation, Lord of the Gods, Self-Identification. Hover or focus any *vox magica* to hear it spoken aloud.
 
 ### The Vessel Inquiry — PGM IV. 154-285 (`/vessel-inquiry`)
 The Lekanomanteia (λεκανομαντεία, *leh-kah-noh-man-TAY-ah*) — a water-vessel divination oracle. Six sections: Preparation of the Vessel, Solar Invocation, Invocation of the Divine Light, The Boy Medium, Names of Power, The Dismissal. Hover or click any phonetic word to hear it spoken; use the ▶ button beside each line to play the full line, or **Play All** to hear the entire ritual.
+
+### How It Works (`/how-it-works`)
+Comprehensive documentation covering the source material (Greek Magical Papyri), ElevenLabs AI voice technology, procedural design techniques, Kiro AI-powered development workflow, property-based testing, and the complete technical stack. Includes links to the open-source repository and development artifacts.
 
 ## Script Modules
 
