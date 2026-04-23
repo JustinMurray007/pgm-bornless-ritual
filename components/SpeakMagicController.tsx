@@ -50,6 +50,8 @@ export default function SpeakMagicController() {
   
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const recognitionRef = useRef<any>(null);
+  const retryCountRef = useRef(0);
+  const maxRetries = 2;
 
   // Initialize speech recognition
   useEffect(() => {
@@ -68,6 +70,9 @@ export default function SpeakMagicController() {
 
       recognitionRef.current.onresult = (event: any) => {
         console.log('Speech recognition result:', event);
+        
+        // Reset retry count on successful result
+        retryCountRef.current = 0;
         
         // Get all alternatives
         const result = event.results[0];
@@ -90,6 +95,30 @@ export default function SpeakMagicController() {
       recognitionRef.current.onerror = (event: any) => {
         console.error('Speech recognition error:', event.error);
         setIsListening(false);
+        
+        // Auto-retry on network errors (up to maxRetries)
+        if (event.error === 'network' && retryCountRef.current < maxRetries) {
+          retryCountRef.current++;
+          console.log(`Network error, retrying... (${retryCountRef.current}/${maxRetries})`);
+          setFeedback(`🔄 Connection issue, retrying... (${retryCountRef.current}/${maxRetries})`);
+          
+          // Retry after a short delay
+          setTimeout(() => {
+            if (recognitionRef.current) {
+              try {
+                recognitionRef.current.start();
+                setIsListening(true);
+              } catch (e) {
+                console.error('Retry failed:', e);
+                setFeedback('💡 Speech recognition unavailable. Use the text input below to practice.');
+              }
+            }
+          }, 1000);
+          return;
+        }
+        
+        // Reset retry count on other errors or max retries reached
+        retryCountRef.current = 0;
         
         // Provide more specific error messages
         if (event.error === 'no-speech') {
@@ -224,6 +253,9 @@ export default function SpeakMagicController() {
       setFeedback('💡 Speech recognition not available. Use the text input below to practice.');
       return;
     }
+
+    // Reset retry count when user manually starts
+    retryCountRef.current = 0;
 
     // Stop any existing recognition
     try {
@@ -393,12 +425,12 @@ export default function SpeakMagicController() {
         <ol>
           <li>Click <strong>🔊 Listen</strong> to hear the correct pronunciation</li>
           <li>Click <strong>🎤 Speak</strong> and pronounce the word clearly into your microphone</li>
+          <li>Or use the text input below to type the pronunciation</li>
           <li>Receive instant feedback on your pronunciation</li>
-          <li>Master {Math.ceil(PRACTICE_WORDS.length * 0.6)} practice words to unlock Challenge Phrases</li>
         </ol>
         <p className="speak-instructions-note">
-          <strong>Note:</strong> Speech recognition works best in Chrome or Edge browsers.
-          Speak clearly and emphasize each syllable for best results.
+          <strong>Tip:</strong> Speech recognition works best in Chrome or Edge browsers with a stable internet connection.
+          If the microphone button doesn't work, use the text input instead - it works just as well!
         </p>
       </div>
     </div>
