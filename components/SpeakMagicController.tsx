@@ -504,12 +504,21 @@ export default function SpeakMagicController() {
           console.log('STT result:', {
             transcript,
             length: transcript.length,
+            rawResult: result,
           });
 
           if (transcript) {
             handleSpeechResult(transcript);
           } else {
-            setFeedback('⏱️ Could not hear you clearly. Please speak louder and closer to the microphone.');
+            // Check if there was an API error
+            if (result.error) {
+              console.error('STT API returned error:', result.error);
+              setFeedback(`⚠️ ${result.error}`);
+            } else {
+              // Empty transcript - likely no speech detected
+              console.warn('Empty transcript received - no speech detected');
+              setFeedback('⏱️ No speech detected. Please speak clearly into the microphone and try again.');
+            }
           }
         } catch (error) {
           console.error('ElevenLabs STT error:', error);
