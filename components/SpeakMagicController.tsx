@@ -363,8 +363,8 @@ export default function SpeakMagicController() {
 
       console.log('Starting audio playback with object URL');
       
-      // Wait a bit for the audio to load before playing
-      await new Promise(resolve => setTimeout(resolve, 100));
+      // Wait longer for the audio to load before playing (increased from 100ms to 300ms)
+      await new Promise(resolve => setTimeout(resolve, 300));
       
       try {
         await audio.play();
