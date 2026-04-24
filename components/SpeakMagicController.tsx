@@ -255,12 +255,24 @@ export default function SpeakMagicController() {
       setRealtimeTranscript('');
       partialTranscriptRef.current = '';
 
+      // Disconnect any existing connection first
+      if (scribeConnectionRef.current) {
+        try {
+          scribeConnectionRef.current.disconnect();
+        } catch (e) {
+          console.log('Cleanup previous connection');
+        }
+        scribeConnectionRef.current = null;
+      }
+
       // Get single-use token from backend
       const tokenResponse = await fetch('/api/scribe-token');
       if (!tokenResponse.ok) {
         throw new Error('Failed to get authentication token');
       }
       const { token } = await tokenResponse.json();
+
+      console.log('Starting realtime connection with token');
 
       // Connect to ElevenLabs realtime speech-to-text
       const connection = Scribe.connect({
@@ -272,20 +284,21 @@ export default function SpeakMagicController() {
           autoGainControl: true,
         },
         vad: {
-          silenceThresholdSecs: 1.5, // Commit after 1.5 seconds of silence
-          threshold: 0.4,
-          minSpeechDurationMs: 100,
-          minSilenceDurationMs: 100,
+          silenceThresholdSecs: 2.0, // Increased to 2 seconds to give more time
+          threshold: 0.5, // Increased threshold to be less sensitive
+          minSpeechDurationMs: 200, // Require at least 200ms of speech
+          minSilenceDurationMs: 200,
         },
       });
 
       scribeConnectionRef.current = connection;
-      setIsListening(true);
-      setFeedback('🎤 Listening... Speak the word now!');
+      
+      let hasReceivedSpeech = false;
 
       // Handle partial transcripts (real-time feedback)
       connection.on(RealtimeEvents.PARTIAL_TRANSCRIPT, (data: any) => {
         console.log('Partial transcript:', data.text);
+        hasReceivedSpeech = true;
         partialTranscriptRef.current = data.text;
         setRealtimeTranscript(data.text);
         setFeedback(`🎤 Hearing: "${data.text}"`);
@@ -293,23 +306,34 @@ export default function SpeakMagicController() {
 
       // Handle committed transcripts (finalized)
       connection.on(RealtimeEvents.COMMITTED_TRANSCRIPT, (data: any) => {
-        console.log('Committed transcript:', data.text);
+        console.log('Committed transcript:', data.text, 'hasReceivedSpeech:', hasReceivedSpeech);
         const transcript = data.text.toLowerCase().trim();
         
-        if (transcript) {
+        // Only process if we actually received speech
+        if (transcript && hasReceivedSpeech) {
           handleSpeechResult(transcript);
+          
+          // Disconnect after getting result
+          setTimeout(() => {
+            if (scribeConnectionRef.current) {
+              scribeConnectionRef.current.disconnect();
+              scribeConnectionRef.current = null;
+            }
+            setIsListening(false);
+          }, 100);
+        } else if (!hasReceivedSpeech) {
+          // Ignore empty commits that happen before any speech
+          console.log('Ignoring empty commit before speech detected');
         } else {
           setFeedback('⏱️ No speech detected. Please try again.');
+          setTimeout(() => {
+            if (scribeConnectionRef.current) {
+              scribeConnectionRef.current.disconnect();
+              scribeConnectionRef.current = null;
+            }
+            setIsListening(false);
+          }, 100);
         }
-        
-        // Disconnect after getting result
-        setTimeout(() => {
-          if (scribeConnectionRef.current) {
-            scribeConnectionRef.current.disconnect();
-            scribeConnectionRef.current = null;
-          }
-          setIsListening(false);
-        }, 100);
       });
 
       // Handle errors
@@ -330,6 +354,10 @@ export default function SpeakMagicController() {
         console.log('Realtime STT connection closed');
         setIsListening(false);
       });
+
+      // Set listening state and feedback after connection is set up
+      setIsListening(true);
+      setFeedback('🎤 Ready! Speak the word now...');
 
     } catch (error) {
       console.error('Error starting realtime speech recognition:', error);
