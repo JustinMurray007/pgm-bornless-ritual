@@ -13,7 +13,10 @@ A Next.js 14 (App Router) web application that digitally reconstructs two ritual
 
 ## Pages
 
-### The Bornless Ritual — PGM V. 96-172 (`/`)
+### Home (`/`)
+Landing page with project overview, video introduction, and navigation to the three main experiences: The Bornless Ritual, The Vessel Inquiry, and Speak the Magic.
+
+### The Bornless Ritual — PGM V. 96-172 (`/bornless-ritual`)
 The Stele of Jeu the Hieroglyphist. Five sections: Opening, Invocation of Moses, Headless Invocation, Lord of the Gods, Self-Identification. Hover or focus any *vox magica* to hear it spoken aloud.
 
 ### The Vessel Inquiry — PGM IV. 154-285 (`/vessel-inquiry`)

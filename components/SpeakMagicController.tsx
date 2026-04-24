@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { Scribe, RealtimeEvents } from '@elevenlabs/client';
 
 // Practice words from the PGM with their phonetic pronunciations
 const PRACTICE_WORDS = [
@@ -49,23 +50,13 @@ export default function SpeakMagicController() {
   const [manualInput, setManualInput] = useState('');
   const [showManualInput, setShowManualInput] = useState(true); // Always show manual input option
   const [highlightManualInput, setHighlightManualInput] = useState(false); // Highlight when speech fails
-  const [isBraveBrowser, setIsBraveBrowser] = useState(false); // Detect Brave browser
   
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const recognitionRef = useRef<any>(null);
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const audioChunksRef = useRef<Blob[]>([]);
-  const retryCountRef = useRef(0);
-  const maxRetries = 2;
-  const [useElevenLabsSTT, setUseElevenLabsSTT] = useState(false);
+  const scribeConnectionRef = useRef<any>(null);
+  const partialTranscriptRef = useRef<string>('');
+  const [realtimeTranscript, setRealtimeTranscript] = useState<string>('');
 
-  // Detect Brave browser on mount
-  useEffect(() => {
-    if (typeof window !== 'undefined' && 'brave' in navigator) {
-      setIsBraveBrowser(true);
-      console.log('Brave browser detected - Web Speech API is blocked by design');
-    }
-  }, []);
+  // Detect Brave browser on mount - removed, no longer needed
 
   const handleSpeechResult = useCallback((transcript: string) => {
     const currentItem = stage === 'practice' 
@@ -100,156 +91,16 @@ export default function SpeakMagicController() {
     }
   }, [stage, currentWordIndex]);
 
-  // Initialize speech recognition
+  // Initialize speech recognition - removed old Web Speech API and MediaRecorder logic
+  // Now using ElevenLabs realtime speech-to-text with VAD
   useEffect(() => {
-    if (typeof window !== 'undefined' && 'webkitSpeechRecognition' in window) {
-      const SpeechRecognition = (window as any).webkitSpeechRecognition;
-      recognitionRef.current = new SpeechRecognition();
-      recognitionRef.current.continuous = false; // Single utterance
-      recognitionRef.current.interimResults = false;
-      recognitionRef.current.lang = 'en-US'; // Use English for phonetic spellings
-      recognitionRef.current.maxAlternatives = 5;
-
-      recognitionRef.current.onstart = () => {
-        console.log('Speech recognition started');
-        setFeedback('🎤 Listening... Speak the word now!');
-      };
-
-      recognitionRef.current.onresult = (event: any) => {
-        console.log('Speech recognition result:', event);
-        
-        // Reset retry count on successful result
-        retryCountRef.current = 0;
-        
-        // Get all alternatives
-        const result = event.results[0];
-        const alternatives = [];
-        for (let i = 0; i < result.length; i++) {
-          alternatives.push(result[i].transcript.toLowerCase().trim());
-        }
-        
-        console.log('All alternatives:', alternatives);
-        const transcript = alternatives[0];
-        console.log('Best transcript:', transcript);
-        
-        if (transcript.length > 0) {
-          handleSpeechResult(transcript);
-        } else {
-          setFeedback('⏱️ No speech detected. Please try again.');
-        }
-      };
-
-      recognitionRef.current.onerror = (event: any) => {
-        console.error('Speech recognition error:', event.error);
-        setIsListening(false);
-        
-        // Auto-retry on network errors (up to maxRetries)
-        if (event.error === 'network' && retryCountRef.current < maxRetries) {
-          retryCountRef.current++;
-          console.log(`Network error, retrying... (${retryCountRef.current}/${maxRetries})`);
-          setFeedback(`🔄 Connection issue, retrying... (${retryCountRef.current}/${maxRetries})`);
-          
-          // Ensure recognition is fully stopped before retrying
-          if (recognitionRef.current) {
-            try {
-              // Attempt to stop first to ensure clean state
-              recognitionRef.current.stop();
-            } catch (e) {
-              // Already stopped, which is what we want
-              console.log('Recognition already stopped');
-            }
-          }
-          
-          // Wait longer for recognition to fully stop before retrying (increased from 1500ms to 2000ms)
-          setTimeout(() => {
-            if (recognitionRef.current && !isListening) {
-              try {
-                setIsListening(true);
-                recognitionRef.current.start();
-              } catch (e) {
-                // If InvalidStateError occurs, abort retry and switch to fallback
-                if (e instanceof DOMException && e.name === 'InvalidStateError') {
-                  console.error('Recognition in invalid state, switching to fallback');
-                  retryCountRef.current = maxRetries; // Force fallback
-                  setUseElevenLabsSTT(true);
-                  setFeedback('💡 Switching to backup speech recognition...');
-                  setHighlightManualInput(true);
-                } else {
-                  console.error('Retry failed:', e);
-                  retryCountRef.current = 0;
-                  setIsListening(false);
-                  setFeedback('💡 Speech recognition unavailable. Use the text input below to practice.');
-                  setHighlightManualInput(true);
-                }
-              }
-            }
-          }, 2000); // Increased delay to 2000ms for more reliable cleanup
-          return;
-        }
-        
-        // Reset retry count on other errors or max retries reached
-        retryCountRef.current = 0;
-        
-        // Provide more specific error messages
-        if (event.error === 'no-speech') {
-          setFeedback('⏱️ No speech detected. Try the text input below instead.');
-          setHighlightManualInput(true);
-        } else if (event.error === 'audio-capture') {
-          setFeedback('🎤 Microphone not found. Use the text input below to practice.');
-          setHighlightManualInput(true);
-        } else if (event.error === 'not-allowed') {
-          setFeedback('🚫 Microphone permission denied. Use the text input below to practice.');
-          setHighlightManualInput(true);
-        } else if (event.error === 'network') {
-          setFeedback('💡 Speech recognition unavailable. Use the text input below to practice.');
-          setHighlightManualInput(true);
-        } else if (event.error === 'aborted') {
-          // Don't show error for aborted - this is normal when we stop it
-          console.log('Recognition aborted (normal)');
-        } else {
-          setFeedback(`💡 Microphone unavailable. Use the text input below to practice.`);
-          setHighlightManualInput(true);
-        }
-      };
-
-      recognitionRef.current.onend = () => {
-        console.log('Speech recognition ended');
-        // Small delay before allowing new recognition to start
-        setTimeout(() => {
-          setIsListening(false);
-        }, 100);
-      };
-
-      recognitionRef.current.onspeechstart = () => {
-        console.log('Speech detected');
-      };
-
-      recognitionRef.current.onspeechend = () => {
-        console.log('Speech ended - processing...');
-      };
-    }
-
     return () => {
-      // Cleanup recognition instance
-      if (recognitionRef.current) {
+      // Cleanup realtime connection
+      if (scribeConnectionRef.current) {
         try {
-          recognitionRef.current.stop();
-          recognitionRef.current.abort(); // Force abort
+          scribeConnectionRef.current.disconnect();
         } catch (e) {
-          // Ignore errors on cleanup
-          console.log('Recognition cleanup (errors ignored)');
-        }
-      }
-      
-      // Cleanup media recorder
-      if (mediaRecorderRef.current) {
-        try {
-          if (mediaRecorderRef.current.state === 'recording') {
-            mediaRecorderRef.current.stop();
-          }
-        } catch (e) {
-          // Ignore errors on cleanup
-          console.log('MediaRecorder cleanup (errors ignored)');
+          console.log('Scribe cleanup (errors ignored)');
         }
       }
       
@@ -263,12 +114,11 @@ export default function SpeakMagicController() {
           }
           audioRef.current.src = '';
         } catch (e) {
-          // Ignore errors on cleanup
           console.log('Audio cleanup (errors ignored)');
         }
       }
     };
-  }, [handleSpeechResult, isListening]);
+  }, []);
 
   const playPronunciation = async (text: string, phonetic: string) => {
     if (isPlaying) return;
@@ -399,168 +249,92 @@ export default function SpeakMagicController() {
   };
 
   const startListening = async () => {
-    // If Web Speech API failed, use ElevenLabs STT
-    if (useElevenLabsSTT || !recognitionRef.current) {
-      await startElevenLabsRecording();
-      return;
-    }
-
-    // Reset retry count and highlight when user manually starts
-    retryCountRef.current = 0;
-    setHighlightManualInput(false);
-
-    // Stop any existing recognition
     try {
-      recognitionRef.current.stop();
-    } catch (e) {
-      // Ignore if not running
-    }
+      setFeedback('🎤 Connecting to speech recognition...');
+      setHighlightManualInput(false);
+      setRealtimeTranscript('');
+      partialTranscriptRef.current = '';
 
-    // Small delay to ensure previous recognition is fully stopped
-    setTimeout(() => {
-      try {
-        setFeedback('🎤 Starting microphone...');
-        setIsListening(true);
-        recognitionRef.current.start();
-        console.log('Speech recognition start requested');
-      } catch (error) {
-        console.error('Error starting speech recognition:', error);
-        setIsListening(false);
-        setFeedback('💡 Switching to backup speech recognition...');
-        setUseElevenLabsSTT(true);
-        setHighlightManualInput(true);
+      // Get single-use token from backend
+      const tokenResponse = await fetch('/api/scribe-token');
+      if (!tokenResponse.ok) {
+        throw new Error('Failed to get authentication token');
       }
-    }, 100);
-  };
+      const { token } = await tokenResponse.json();
 
-  const startElevenLabsRecording = async () => {
-    try {
-      setFeedback('🎤 Requesting microphone access...');
-      
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      
-      // Try to use a compatible audio format
-      let mimeType = 'audio/webm';
-      if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
-        mimeType = 'audio/webm;codecs=opus';
-      } else if (MediaRecorder.isTypeSupported('audio/ogg;codecs=opus')) {
-        mimeType = 'audio/ogg;codecs=opus';
-      } else if (MediaRecorder.isTypeSupported('audio/mp4')) {
-        mimeType = 'audio/mp4';
-      }
-      
-      console.log('Using MediaRecorder with mimeType:', mimeType);
-      
-      const mediaRecorder = new MediaRecorder(stream, { mimeType });
-      mediaRecorderRef.current = mediaRecorder;
-      audioChunksRef.current = [];
+      // Connect to ElevenLabs realtime speech-to-text
+      const connection = Scribe.connect({
+        token,
+        modelId: 'scribe_v2_realtime',
+        microphone: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
+        vad: {
+          silenceThresholdSecs: 1.5, // Commit after 1.5 seconds of silence
+          threshold: 0.4,
+          minSpeechDurationMs: 100,
+          minSilenceDurationMs: 100,
+        },
+      });
 
-      mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          audioChunksRef.current.push(event.data);
-          console.log('Audio chunk received:', event.data.size, 'bytes');
-        }
-      };
-
-      mediaRecorder.onstop = async () => {
-        console.log('MediaRecorder stopped, processing audio...');
-        
-        // Longer delay to ensure all audio chunks are collected
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
-        setFeedback('🔄 Processing your speech...');
-        
-        const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
-        
-        console.log('Audio blob created:', {
-          size: audioBlob.size,
-          type: audioBlob.type,
-          chunks: audioChunksRef.current.length,
-        });
-        
-        // Skip size validation - let the API handle it
-        // This prevents false positives from premature validation
-        
-        // Send to ElevenLabs STT API
-        const formData = new FormData();
-        formData.append('audio', audioBlob, 'recording.webm');
-
-        try {
-          const response = await fetch('/api/stt', {
-            method: 'POST',
-            body: formData,
-          });
-
-          if (!response.ok) {
-            const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-            console.error('STT API error response:', {
-              status: response.status,
-              statusText: response.statusText,
-              error: errorData,
-            });
-            throw new Error(`STT request failed: ${response.status} - ${errorData.error || response.statusText}`);
-          }
-
-          const result = await response.json();
-          const transcript = result.transcript?.toLowerCase().trim() || '';
-          
-          console.log('STT result:', {
-            transcript,
-            length: transcript.length,
-            rawResult: result,
-          });
-
-          if (transcript) {
-            handleSpeechResult(transcript);
-          } else {
-            // Check if there was an API error
-            if (result.error) {
-              console.error('STT API returned error:', result.error);
-              setFeedback(`⚠️ ${result.error}`);
-            } else {
-              // Empty transcript - likely no speech detected
-              console.warn('Empty transcript received - no speech detected');
-              setFeedback('⏱️ No speech detected. Please speak clearly into the microphone and try again.');
-            }
-          }
-        } catch (error) {
-          console.error('ElevenLabs STT error:', error);
-          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-          setFeedback(`💡 Speech recognition unavailable. Please use the text input below to practice.`);
-          setHighlightManualInput(true);
-        } finally {
-          setIsListening(false);
-          stream.getTracks().forEach(track => track.stop());
-        }
-      };
-
-      mediaRecorder.start();
+      scribeConnectionRef.current = connection;
       setIsListening(true);
-      
-      // Countdown timer
-      let secondsLeft = 10;
-      setFeedback(`🎤 Recording... ${secondsLeft} seconds remaining. Speak now!`);
-      
-      const countdownInterval = setInterval(() => {
-        secondsLeft--;
-        if (secondsLeft > 0) {
-          setFeedback(`🎤 Recording... ${secondsLeft} seconds remaining. Keep speaking!`);
-        }
-      }, 1000);
+      setFeedback('🎤 Listening... Speak the word now!');
 
-      // Auto-stop after 10 seconds
-      setTimeout(() => {
-        clearInterval(countdownInterval);
-        if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
-          console.log('Auto-stopping recording after 10 seconds');
-          mediaRecorderRef.current.stop();
+      // Handle partial transcripts (real-time feedback)
+      connection.on(RealtimeEvents.PARTIAL_TRANSCRIPT, (data: any) => {
+        console.log('Partial transcript:', data.text);
+        partialTranscriptRef.current = data.text;
+        setRealtimeTranscript(data.text);
+        setFeedback(`🎤 Hearing: "${data.text}"`);
+      });
+
+      // Handle committed transcripts (finalized)
+      connection.on(RealtimeEvents.COMMITTED_TRANSCRIPT, (data: any) => {
+        console.log('Committed transcript:', data.text);
+        const transcript = data.text.toLowerCase().trim();
+        
+        if (transcript) {
+          handleSpeechResult(transcript);
+        } else {
+          setFeedback('⏱️ No speech detected. Please try again.');
         }
-      }, 10000);
+        
+        // Disconnect after getting result
+        setTimeout(() => {
+          if (scribeConnectionRef.current) {
+            scribeConnectionRef.current.disconnect();
+            scribeConnectionRef.current = null;
+          }
+          setIsListening(false);
+        }, 100);
+      });
+
+      // Handle errors
+      connection.on(RealtimeEvents.ERROR, (error: any) => {
+        console.error('Realtime STT error:', error);
+        setIsListening(false);
+        setFeedback('💡 Speech recognition unavailable. Use the text input below to practice.');
+        setHighlightManualInput(true);
+        
+        if (scribeConnectionRef.current) {
+          scribeConnectionRef.current.disconnect();
+          scribeConnectionRef.current = null;
+        }
+      });
+
+      // Handle connection close
+      connection.on(RealtimeEvents.CLOSE, () => {
+        console.log('Realtime STT connection closed');
+        setIsListening(false);
+      });
 
     } catch (error) {
-      console.error('Error accessing microphone:', error);
+      console.error('Error starting realtime speech recognition:', error);
       setIsListening(false);
-      setFeedback('🚫 Could not access microphone. Please check permissions.');
+      setFeedback('💡 Could not start speech recognition. Use the text input below to practice.');
       setHighlightManualInput(true);
     }
   };
@@ -741,41 +515,14 @@ export default function SpeakMagicController() {
           >
             {isPlaying ? '🔊 Playing...' : '🔊 Listen'}
           </button>
-          {!isBraveBrowser && (
-            <button
-              onClick={startListening}
-              disabled={isListening || isPlaying}
-              className={`speak-btn speak-btn-record${isListening ? ' speak-btn-record--active' : ''}`}
-            >
-              {isListening ? '🎤 Listening...' : '🎤 Speak'}
-            </button>
-          )}
+          <button
+            onClick={startListening}
+            disabled={isListening || isPlaying}
+            className={`speak-btn speak-btn-record${isListening ? ' speak-btn-record--active' : ''}`}
+          >
+            {isListening ? '🎤 Listening...' : '🎤 Speak'}
+          </button>
         </div>
-
-        {isBraveBrowser && (
-          <div className="speak-browser-warning">
-            <p>
-              <strong>⚠️ Brave Browser Detected:</strong> The Web Speech API is blocked by Brave for privacy reasons.
-              Please use the text input below to practice pronunciation, or try a different browser (Chrome, Edge, Safari).
-            </p>
-            <p>
-              <a 
-                href="https://stackoverflow.com/questions/74113965/speechrecognition-emitting-network-error-event-in-brave-browser"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="speak-browser-warning-link"
-              >
-                Learn more about this limitation →
-              </a>
-            </p>
-          </div>
-        )}
-
-        {useElevenLabsSTT && (
-          <div className="speak-backup-notice">
-            <p>✨ Using backup speech recognition (ElevenLabs)</p>
-          </div>
-        )}
 
         {feedback && (
           <div className={`speak-feedback${feedback.includes('Excellent') ? ' speak-feedback--success' : ''}`}>
@@ -807,12 +554,13 @@ export default function SpeakMagicController() {
         <ol>
           <li>Click <strong>🔊 Listen</strong> to hear the correct pronunciation</li>
           <li>Click <strong>🎤 Speak</strong> and pronounce the word clearly into your microphone</li>
-          <li>Receive instant feedback on your pronunciation</li>
+          <li>See real-time feedback as you speak</li>
+          <li>The system automatically detects when you finish speaking</li>
           <li>Keep practicing until you master each word!</li>
         </ol>
         <p className="speak-instructions-note">
-          <strong>Tip:</strong> If speech recognition has connection issues, the system will automatically
-          switch to a backup service. Speak clearly and emphasize each syllable for best results.
+          <strong>Tip:</strong> Speak clearly and emphasize each syllable for best results.
+          The system uses advanced voice recognition that works in all browsers.
         </p>
       </div>
     </div>
