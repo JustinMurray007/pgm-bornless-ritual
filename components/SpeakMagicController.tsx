@@ -133,15 +133,12 @@ export default function SpeakMagicController() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           text: phonetic,
-          voiceId: 'onwK4e9ZLuTAKqWW03F9' // Daniel voice
+          voiceId: 'onwK4e9ZLuTAKqWW03F9', // Daniel voice
+          modelId: 'eleven_flash_v2_5' // Use Flash model for low latency
         }),
       });
 
       console.log('TTS response status:', response.status);
-      console.log('TTS response headers:', {
-        contentType: response.headers.get('content-type'),
-        contentLength: response.headers.get('content-length'),
-      });
       
       if (!response.ok) {
         const errorText = await response.text();
@@ -150,97 +147,68 @@ export default function SpeakMagicController() {
       }
 
       const audioBlob = await response.blob();
-      console.log('Audio blob size:', audioBlob.size, 'type:', audioBlob.type);
+      console.log('Audio blob received:', audioBlob.size, 'bytes, type:', audioBlob.type);
       
-      // Validate blob
       if (audioBlob.size === 0) {
-        throw new Error('Received empty audio file from server');
+        throw new Error('Received empty audio file');
       }
-      
-      if (!audioBlob.type.includes('audio')) {
-        console.warn('Unexpected blob type:', audioBlob.type);
-      }
-      
-      // Create object URL for audio playback
-      const audioUrl = URL.createObjectURL(audioBlob);
       
       // Clean up previous audio
       if (audioRef.current) {
         audioRef.current.pause();
-        if (audioRef.current.src.startsWith('blob:')) {
+        if (audioRef.current.src && audioRef.current.src.startsWith('blob:')) {
           URL.revokeObjectURL(audioRef.current.src);
         }
-        audioRef.current.src = '';
-        audioRef.current = null;
       }
 
       // Create new audio element
       const audio = new Audio();
       audioRef.current = audio;
-
-      // Set up event handlers BEFORE setting src
-      let hasErrored = false;
       
-      audio.addEventListener('error', (e) => {
-        if (hasErrored) return; // Prevent duplicate error handling
-        hasErrored = true;
-        
+      // Create blob URL
+      const audioUrl = URL.createObjectURL(audioBlob);
+      console.log('Created blob URL:', audioUrl);
+
+      // Set up event handlers
+      const handleEnded = () => {
+        console.log('Audio playback ended');
+        setIsPlaying(false);
+        // Revoke URL after playback completes
+        setTimeout(() => {
+          URL.revokeObjectURL(audioUrl);
+        }, 100);
+      };
+
+      const handleError = (e: Event) => {
         console.error('Audio playback error:', e);
-        console.error('Audio error details:', {
-          error: audio.error,
-          code: audio.error?.code,
-          message: audio.error?.message,
-          networkState: audio.networkState,
-          readyState: audio.readyState,
-        });
+        if (audio.error) {
+          console.error('MediaError details:', {
+            code: audio.error.code,
+            message: audio.error.message,
+          });
+        }
         setIsPlaying(false);
         setFeedback('Could not play audio. Please try again.');
         URL.revokeObjectURL(audioUrl);
-      });
-
-      audio.addEventListener('ended', () => {
-        console.log('Audio playback ended');
-        setIsPlaying(false);
-        URL.revokeObjectURL(audioUrl);
-      });
-
-      audio.addEventListener('loadeddata', () => {
-        console.log('Audio loaded successfully, duration:', audio.duration);
-      });
-
-      // Wait for audio to be ready before playing
-      const playWhenReady = () => {
-        if (hasErrored) return;
-        
-        console.log('Audio ready, starting playback');
-        audio.play().then(() => {
-          console.log('Audio playback started successfully');
-        }).catch((playError) => {
-          if (hasErrored) return;
-          hasErrored = true;
-          
-          console.error('Play failed:', playError);
-          setIsPlaying(false);
-          setFeedback('Could not play audio. Please try clicking the button again.');
-          URL.revokeObjectURL(audioUrl);
-        });
       };
 
-      // Use loadedmetadata as it fires earlier than canplaythrough
-      audio.addEventListener('loadedmetadata', playWhenReady, { once: true });
-      
-      // Fallback timeout in case loadedmetadata never fires
-      const timeoutId = setTimeout(() => {
-        if (!hasErrored && audio.readyState >= 1) {
-          playWhenReady();
-        }
-      }, 1000);
+      audio.addEventListener('ended', handleEnded);
+      audio.addEventListener('error', handleError);
 
-      // Set source and load
+      // Set source and play
       audio.src = audioUrl;
-      audio.load(); // Explicitly load the audio
+      
+      // Play audio
+      try {
+        await audio.play();
+        console.log('Audio playback started');
+      } catch (playError) {
+        console.error('Play failed:', playError);
+        setIsPlaying(false);
+        setFeedback('Could not play audio. Please try again.');
+        URL.revokeObjectURL(audioUrl);
+      }
 
-      console.log('Audio loading started with object URL');
     } catch (error) {
       console.error('Error playing pronunciation:', error);
       setIsPlaying(false);
@@ -250,7 +218,7 @@ export default function SpeakMagicController() {
 
   const startListening = async () => {
     try {
-      setFeedback('🎤 Connecting to speech recognition...');
+      setFeedback('🎤 Connecting...');
       setHighlightManualInput(false);
       setRealtimeTranscript('');
       partialTranscriptRef.current = '';
@@ -272,7 +240,7 @@ export default function SpeakMagicController() {
       }
       const { token } = await tokenResponse.json();
 
-      console.log('Starting realtime connection with token');
+      console.log('Connecting to ElevenLabs realtime STT...');
 
       // Connect to ElevenLabs realtime speech-to-text
       const connection = Scribe.connect({
@@ -284,16 +252,25 @@ export default function SpeakMagicController() {
           autoGainControl: true,
         },
         vad: {
-          silenceThresholdSecs: 3.5, // 3.5 seconds of silence for slower speakers
-          threshold: 0.5, // Increased threshold to be less sensitive
-          minSpeechDurationMs: 200, // Require at least 200ms of speech
-          minSilenceDurationMs: 200,
+          silenceThresholdSecs: 3.5, // Wait 3.5 seconds of silence before committing
+          threshold: 0.5, // Speech detection sensitivity (0-1, higher = less sensitive)
+          minSpeechDurationMs: 250, // Require at least 250ms of speech
+          minSilenceDurationMs: 250, // Require at least 250ms of silence
         },
       });
 
       scribeConnectionRef.current = connection;
       
       let hasReceivedSpeech = false;
+      let sessionStarted = false;
+
+      // Handle session started
+      connection.on(RealtimeEvents.SESSION_STARTED, (data: any) => {
+        console.log('Session started:', data.sessionId);
+        sessionStarted = true;
+        setIsListening(true);
+        setFeedback('🎤 Ready! Speak now...');
+      });
 
       // Handle partial transcripts (real-time feedback)
       connection.on(RealtimeEvents.PARTIAL_TRANSCRIPT, (data: any) => {
@@ -311,24 +288,33 @@ export default function SpeakMagicController() {
         
         // Only process if we actually received speech
         if (transcript && hasReceivedSpeech) {
+          console.log('Processing transcript:', transcript);
           handleSpeechResult(transcript);
           
           // Disconnect after getting result
           setTimeout(() => {
             if (scribeConnectionRef.current) {
-              scribeConnectionRef.current.disconnect();
+              try {
+                scribeConnectionRef.current.disconnect();
+              } catch (e) {
+                console.log('Disconnect error (ignored)');
+              }
               scribeConnectionRef.current = null;
             }
             setIsListening(false);
           }, 100);
         } else if (!hasReceivedSpeech) {
           // Ignore empty commits that happen before any speech
-          console.log('Ignoring empty commit before speech detected');
+          console.log('Ignoring empty commit - no speech detected yet');
         } else {
           setFeedback('⏱️ No speech detected. Please try again.');
           setTimeout(() => {
             if (scribeConnectionRef.current) {
-              scribeConnectionRef.current.disconnect();
+              try {
+                scribeConnectionRef.current.disconnect();
+              } catch (e) {
+                console.log('Disconnect error (ignored)');
+              }
               scribeConnectionRef.current = null;
             }
             setIsListening(false);
@@ -340,11 +326,26 @@ export default function SpeakMagicController() {
       connection.on(RealtimeEvents.ERROR, (error: any) => {
         console.error('Realtime STT error:', error);
         setIsListening(false);
-        setFeedback('💡 Speech recognition unavailable. Use the text input below to practice.');
+        
+        // Provide specific error messages based on error code
+        let errorMessage = '💡 Speech recognition unavailable. Use the text input below to practice.';
+        if (error.code === 'authentication_failed') {
+          errorMessage = '🔒 Authentication failed. Please refresh the page.';
+        } else if (error.code === 'quota_exceeded') {
+          errorMessage = '⚠️ Usage limit reached. Please try again later.';
+        } else if (error.code === 'rate_limited') {
+          errorMessage = '⏱️ Too many requests. Please wait a moment.';
+        }
+        
+        setFeedback(errorMessage);
         setHighlightManualInput(true);
         
         if (scribeConnectionRef.current) {
-          scribeConnectionRef.current.disconnect();
+          try {
+            scribeConnectionRef.current.disconnect();
+          } catch (e) {
+            console.log('Disconnect error (ignored)');
+          }
           scribeConnectionRef.current = null;
         }
       });
@@ -355,9 +356,9 @@ export default function SpeakMagicController() {
         setIsListening(false);
       });
 
-      // Set listening state and feedback after connection is set up
+      // Set initial state
       setIsListening(true);
-      setFeedback('🎤 Ready! Speak the word now...');
+      setFeedback('🎤 Connecting...');
 
     } catch (error) {
       console.error('Error starting realtime speech recognition:', error);
