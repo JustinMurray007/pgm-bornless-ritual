@@ -284,7 +284,7 @@ export default function SpeakMagicController() {
           autoGainControl: true,
         },
         vad: {
-          silenceThresholdSecs: 2.0, // Increased to 2 seconds to give more time
+          silenceThresholdSecs: 3.5, // 3.5 seconds of silence for slower speakers
           threshold: 0.5, // Increased threshold to be less sensitive
           minSpeechDurationMs: 200, // Require at least 200ms of speech
           minSilenceDurationMs: 200,
