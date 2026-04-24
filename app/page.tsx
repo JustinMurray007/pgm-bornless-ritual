@@ -91,7 +91,7 @@ export default function HomePage() {
         {/* About Section */}
         <section className="about-section">
           <div className="about-content">
-            <h2 className="about-title">From Ancient Egypt to Your Screen</h2>
+            <h2 className="about-title" style={{ fontSize: '2rem' }}>From Ancient Egypt to Your Screen</h2>
             <p className="about-text">
               The Greek Magical Papyri are a collection of spells, rituals, and invocations
               spanning the 2nd century BCE to the 5th century CE. Buried in the Egyptian
@@ -100,13 +100,18 @@ export default function HomePage() {
             </p>
             <p className="about-text">
               The <strong>Bornless Ritual</strong> (PGM V. 96-172) calls upon the Ἀκέφαλος
-              (Akephalos), the Headless One, using <em>voces magicae</em>—barbarous words
+              (Akephalos), the Headless One, using <em>voces magicae</em>: barbarous words
               of power whose potency was believed to reside in their sound alone.
             </p>
             <p className="about-text">
+              The <strong>Vessel Inquiry</strong> (PGM IV. 154-285) is a divination ritual
+              using a consecrated vessel of water as a scrying medium, summoning divine presence
+              to answer questions about the future.
+            </p>
+            <p className="about-text">
               This project brings these ancient words to life with modern technology:
-              interactive text, AI-generated voices, and speech recognition—making a
-              2,000-year-old ritual accessible and experiential.
+              interactive text, AI-generated voices, and speech recognition, making
+              2,000-year-old rituals accessible and experiential.
             </p>
           </div>
         </section>
