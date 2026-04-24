@@ -311,23 +311,25 @@ export default function SpeakMagicController() {
         console.warn('Unexpected blob type:', audioBlob.type);
       }
       
-      // Create object URL for audio playback (more reliable than data URL)
+      // Create object URL for audio playback
       const audioUrl = URL.createObjectURL(audioBlob);
       
+      // Clean up previous audio
       if (audioRef.current) {
         audioRef.current.pause();
-        // Revoke old object URL to prevent memory leaks
         if (audioRef.current.src.startsWith('blob:')) {
           URL.revokeObjectURL(audioRef.current.src);
         }
         audioRef.current.src = '';
+        audioRef.current = null;
       }
 
+      // Create new audio element
       const audio = new Audio();
-      audio.preload = 'auto';
       audioRef.current = audio;
 
-      audio.onerror = (e) => {
+      // Set up event handlers BEFORE setting src
+      audio.addEventListener('error', (e) => {
         console.error('Audio playback error:', e);
         console.error('Audio error details:', {
           error: audio.error,
@@ -338,32 +340,39 @@ export default function SpeakMagicController() {
         });
         setIsPlaying(false);
         setFeedback('Could not play audio. Please try again.');
-        // Clean up object URL on error
         URL.revokeObjectURL(audioUrl);
-      };
+      });
 
-      audio.onended = () => {
+      audio.addEventListener('ended', () => {
         console.log('Audio playback ended');
         setIsPlaying(false);
-        // Clean up object URL after playback
         URL.revokeObjectURL(audioUrl);
-      };
+      });
 
-      audio.onloadeddata = () => {
-        console.log('Audio loaded successfully');
-      };
+      audio.addEventListener('loadeddata', () => {
+        console.log('Audio loaded successfully, duration:', audio.duration);
+      });
 
-      // Set src AFTER attaching event listeners
+      audio.addEventListener('canplaythrough', () => {
+        console.log('Audio can play through');
+      });
+
+      // Set source and load
       audio.src = audioUrl;
+      audio.load(); // Explicitly load the audio
 
       console.log('Starting audio playback with object URL');
+      
+      // Wait a bit for the audio to load before playing
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       try {
         await audio.play();
+        console.log('Audio playback started successfully');
       } catch (playError) {
         console.error('Play failed:', playError);
         setIsPlaying(false);
         setFeedback('Could not play audio. Please try clicking the button again.');
-        // Clean up object URL on play error
         URL.revokeObjectURL(audioUrl);
       }
     } catch (error) {
