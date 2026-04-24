@@ -258,6 +258,7 @@ export default function SpeakMagicController() {
       let hasReceivedSpeech = false;
       let sessionStarted = false;
       let commitTimeout: NodeJS.Timeout | null = null;
+      let maxListeningTimeout: NodeJS.Timeout | null = null;
 
       // Handle session started
       connection.on(RealtimeEvents.SESSION_STARTED, (data: any) => {
@@ -265,6 +266,18 @@ export default function SpeakMagicController() {
         sessionStarted = true;
         setIsListening(true);
         setFeedback('🎤 Ready! Speak now...');
+        
+        // Set maximum listening time of 16 seconds
+        maxListeningTimeout = setTimeout(() => {
+          console.log('16 seconds elapsed - auto-committing');
+          if (scribeConnectionRef.current) {
+            try {
+              scribeConnectionRef.current.commit();
+            } catch (e) {
+              console.log('Commit error (ignored)');
+            }
+          }
+        }, 16000);
       });
 
       // Handle partial transcripts (real-time feedback)
@@ -296,10 +309,14 @@ export default function SpeakMagicController() {
         console.log('Committed transcript:', data.text, 'hasReceivedSpeech:', hasReceivedSpeech);
         const transcript = data.text.toLowerCase().trim();
         
-        // Clear commit timeout
+        // Clear both timeouts
         if (commitTimeout) {
           clearTimeout(commitTimeout);
           commitTimeout = null;
+        }
+        if (maxListeningTimeout) {
+          clearTimeout(maxListeningTimeout);
+          maxListeningTimeout = null;
         }
         
         // Only process if we actually received speech
