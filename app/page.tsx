@@ -9,19 +9,6 @@ export default function HomePage() {
       <main className="hero-page">
         {/* Hero Section */}
         <section className="hero-section">
-          <div className="hero-content">
-            <h1 className="hero-title">
-              The Bornless Ritual
-            </h1>
-            <p className="hero-tagline">
-              Ancient Words of Power — Brought to Life
-            </p>
-            <p className="hero-description">
-              Experience the Stele of Jeu the Hieroglyphist from the Greek Magical Papyri.
-              A 2,000-year-old invocation, now interactive and speakable.
-            </p>
-          </div>
-
           {/* Video Container */}
           <div className="hero-video-container">
             <div className="hero-video-wrapper">
