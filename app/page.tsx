@@ -14,7 +14,8 @@ export default function HomePage() {
               Digital Grimoire
             </h1>
             <p className="hero-tagline">
-              The World's Oldest Spells & Magic. Brought Back To Life With AI Technology
+              The World's Oldest Spells & Magic.<br />
+              Brought Back To Life With AI Technology
             </p>
           </div>
 
