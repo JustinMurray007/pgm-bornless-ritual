@@ -17,7 +17,7 @@ A Next.js 14 (App Router) web application that digitally reconstructs two ritual
 The Stele of Jeu the Hieroglyphist. Five sections: Opening, Invocation of Moses, Headless Invocation, Lord of the Gods, Self-Identification. Hover or focus any *vox magica* to hear it spoken aloud.
 
 ### The Vessel Inquiry — PGM IV. 154-285 (`/vessel-inquiry`)
-The Lekanomanteia (λεκανομαντεία, *leh-kah-noh-man-TAY-ah*) — a water-vessel divination oracle. Six sections: Preparation of the Vessel, Solar Invocation, Invocation of the Divine Light, The Boy Medium, Names of Power, The Dismissal. Hover or click any phonetic word to hear it spoken; use the ▶ button beside each line to play the full line, or **Play All** to hear the entire ritual.
+The Lekanomanteia (λεκανομαντεία, *leh-kah-noh-man-TAY-ah*) — a water-vessel divination oracle. Six sections: Preparation of the Vessel, Solar Invocation, Invocation of the Divine Light, The Boy Medium, Names of Power, The Dismissal. Hover or click any phonetic word to hear it spoken; use the ▶ button beside each line to play the full line (click ■ to stop), or **Play All** to hear the entire ritual.
 
 ### How It Works (`/how-it-works`)
 Comprehensive documentation covering the source material (Greek Magical Papyri), ElevenLabs AI voice technology, procedural design techniques, Kiro AI-powered development workflow, property-based testing, and the complete technical stack. Includes links to the open-source repository and development artifacts.
@@ -27,12 +27,17 @@ Interactive pronunciation practice for *voces magicae* from the Greek Magical Pa
 - **Practice Words** — 8 individual words of power with difficulty levels (easy/medium/hard). Listen to correct pronunciation, speak into your microphone, and receive instant feedback.
 - **Challenge Phrases** — Complete invocations unlocked after mastering 60% of practice words.
 
-Uses Web Speech API for speech recognition (Chrome/Edge recommended). Each word includes Greek text, phonetic spelling, and English translation.
+**Speech Recognition**: Primary method is text input. Optional voice input uses Web Speech API (Chrome/Edge/Safari). 
+
+**Browser Compatibility**: The Web Speech API is blocked by Brave browser for privacy reasons. Brave users will see a disclaimer and should use the text input method instead. Other browsers (Chrome, Edge, Safari) support the microphone feature.
+
+If Web Speech API is unavailable or fails, users are directed to use the text input field. Each word includes Greek text, phonetic spelling, and English translation.
 
 ## Script Modules
 
 | File | Purpose |
 |---|---|
+| `lib/bornlessScript.ts` | Complete Bornless Ritual script (PGM V) — 5 sections with Greek original, English translation, and phonetic reconstruction |
 | `lib/phoneticScript.ts` | Phonetic reconstruction of PGM V (Bornless Ritual) — 5 sections |
 | `lib/vesselScript.ts` | Phonetic reconstruction of PGM IV (Vessel Inquiry) — 6 sections |
 | `lib/ritualText.ts` | Fallback ritual text for the Bornless Ritual (used if Supabase is unreachable) |
@@ -68,8 +73,10 @@ npm run dev
 
 | Route | Method | Description |
 |---|---|---|
-| `/api/tts` | POST | Proxies TTS requests to ElevenLabs. Body: `{ text, voiceId }`. Returns `audio/mpeg` stream. |
-| `/api/ritual-voice` | POST | Ritual voice playback endpoint. |
+| `/api/tts` | POST | Proxies TTS requests to ElevenLabs. Body: `{ text, voiceId }`. Returns `audio/mpeg` stream. Rate limited: 40 requests per minute per IP. |
+| `/api/ritual-voice` | POST | Ritual voice playback endpoint. Rate limited: 10 requests per minute per IP. |
+
+**Rate Limiting**: API routes use in-memory rate limiting. The `/api/tts` endpoint allows 40 requests/minute per IP (increased for ElevenLabs Pro plan), while `/api/ritual-voice` allows 10 requests/minute per IP. For production deployments, consider using Redis or Vercel KV for distributed rate limiting.
 
 ## Key Features
 

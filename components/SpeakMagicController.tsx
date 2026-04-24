@@ -284,6 +284,11 @@ export default function SpeakMagicController() {
       });
 
       console.log('TTS response status:', response.status);
+      console.log('TTS response headers:', {
+        contentType: response.headers.get('content-type'),
+        contentLength: response.headers.get('content-length'),
+      });
+      
       if (!response.ok) {
         const errorText = await response.text();
         console.error('TTS error response:', errorText);
@@ -291,11 +296,22 @@ export default function SpeakMagicController() {
       }
 
       const audioBlob = await response.blob();
-      console.log('Audio blob size:', audioBlob.size);
+      console.log('Audio blob size:', audioBlob.size, 'type:', audioBlob.type);
+      
+      // Validate blob
+      if (audioBlob.size === 0) {
+        throw new Error('Received empty audio file from server');
+      }
+      
+      if (!audioBlob.type.includes('audio')) {
+        console.warn('Unexpected blob type:', audioBlob.type);
+      }
+      
       const audioUrl = URL.createObjectURL(audioBlob);
 
       if (audioRef.current) {
         audioRef.current.pause();
+        audioRef.current.src = '';
       }
 
       const audio = new Audio(audioUrl);
@@ -303,6 +319,13 @@ export default function SpeakMagicController() {
 
       audio.onerror = (e) => {
         console.error('Audio playback error:', e);
+        console.error('Audio error details:', {
+          error: audio.error,
+          code: audio.error?.code,
+          message: audio.error?.message,
+          networkState: audio.networkState,
+          readyState: audio.readyState,
+        });
         setIsPlaying(false);
         setFeedback('Could not play audio. Please try again.');
         URL.revokeObjectURL(audioUrl);
@@ -314,8 +337,19 @@ export default function SpeakMagicController() {
         URL.revokeObjectURL(audioUrl);
       };
 
+      audio.onloadeddata = () => {
+        console.log('Audio loaded successfully');
+      };
+
       console.log('Starting audio playback');
-      await audio.play();
+      try {
+        await audio.play();
+      } catch (playError) {
+        console.error('Play failed:', playError);
+        setIsPlaying(false);
+        setFeedback('Could not play audio. Please try clicking the button again.');
+        URL.revokeObjectURL(audioUrl);
+      }
     } catch (error) {
       console.error('Error playing pronunciation:', error);
       setIsPlaying(false);
