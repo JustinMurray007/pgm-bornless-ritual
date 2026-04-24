@@ -37,7 +37,7 @@ export default function HomePage() {
 
           {/* CTA Buttons */}
           <div className="hero-cta-group">
-            <Link href="/how-it-works" className="hero-cta hero-cta--primary">
+            <Link href="/bornless-ritual" className="hero-cta hero-cta--primary">
               <span className="hero-cta-icon">✦</span>
               Explore the Ritual
             </Link>
@@ -59,7 +59,7 @@ export default function HomePage() {
               <p className="feature-card-desc">
                 Read the authentic Greek text from PGM V. 96-172. Every word is interactive—hover to hear ancient pronunciation.
               </p>
-              <Link href="/how-it-works" className="feature-link">
+              <Link href="/bornless-ritual" className="feature-link">
                 Read the Ritual →
               </Link>
             </div>
@@ -70,7 +70,7 @@ export default function HomePage() {
               <p className="feature-card-desc">
                 Experience layered vocal harmonics with three voices speaking in unison, creating an immersive soundscape.
               </p>
-              <Link href="/how-it-works" className="feature-link">
+              <Link href="/bornless-ritual" className="feature-link">
                 Listen to Voices →
               </Link>
             </div>

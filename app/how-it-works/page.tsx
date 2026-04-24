@@ -399,7 +399,7 @@ export default function HowItWorksPage() {
           <section className="hiw-section hiw-cta">
             <h2 className="hiw-heading">🎭 Experience the Rituals</h2>
             <div className="hiw-cta-buttons">
-              <Link href="/" className="hiw-cta-button">
+              <Link href="/bornless-ritual" className="hiw-cta-button">
                 The Bornless Ritual
               </Link>
               <Link href="/vessel-inquiry" className="hiw-cta-button">

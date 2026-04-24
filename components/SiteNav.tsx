@@ -4,10 +4,11 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 const LINKS = [
-  { href: '/',                 label: 'The Bornless Ritual' },
-  { href: '/vessel-inquiry',   label: 'The Vessel Inquiry'  },
-  { href: '/how-it-works',     label: 'How It Works'        },
-  { href: '/speak-the-magic',  label: 'Speak the Magic'     },
+  { href: '/',                   label: 'Home' },
+  { href: '/bornless-ritual',    label: 'The Bornless Ritual' },
+  { href: '/vessel-inquiry',     label: 'The Vessel Inquiry'  },
+  { href: '/how-it-works',       label: 'How It Works'        },
+  { href: '/speak-the-magic',    label: 'Speak the Magic'     },
 ];
 
 export default function SiteNav() {
