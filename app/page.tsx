@@ -35,7 +35,11 @@ export default function HomePage() {
           <div className="hero-cta-group">
             <Link href="/bornless-ritual" className="hero-cta hero-cta--primary">
               <span className="hero-cta-icon">✦</span>
-              Explore the Ritual
+              The Bornless Ritual
+            </Link>
+            <Link href="/vessel-inquiry" className="hero-cta hero-cta--primary">
+              <span className="hero-cta-icon">🔮</span>
+              The Vessel Inquiry
             </Link>
             <Link href="/speak-the-magic" className="hero-cta hero-cta--secondary">
               <span className="hero-cta-icon">🎙️</span>
@@ -50,24 +54,24 @@ export default function HomePage() {
           
           <div className="features-grid">
             <div className="feature-card">
-              <div className="feature-icon">📜</div>
-              <h3 className="feature-card-title">The Original Text</h3>
+              <div className="feature-icon">🔮</div>
+              <h3 className="feature-card-title">The Vessel Inquiry</h3>
               <p className="feature-card-desc">
-                Read the authentic Greek text from PGM V. 96-172. Every word is interactive—hover to hear ancient pronunciation.
+                A divination ritual using a consecrated vessel of water as a scrying medium. Summon divine presence to answer questions about the future.
               </p>
-              <Link href="/bornless-ritual" className="feature-link">
-                Read the Ritual →
+              <Link href="/vessel-inquiry" className="feature-link">
+                Experience the Vessel →
               </Link>
             </div>
 
             <div className="feature-card">
-              <div className="feature-icon">🔊</div>
-              <h3 className="feature-card-title">Multi-Voice Performance</h3>
+              <div className="feature-icon">✦</div>
+              <h3 className="feature-card-title">The Bornless Ritual</h3>
               <p className="feature-card-desc">
-                Experience layered vocal harmonics with three voices speaking in unison, creating an immersive soundscape.
+                Read the authentic Greek text from PGM V. 96-172. Every word is interactive—hover to hear ancient pronunciation and voces magicae.
               </p>
               <Link href="/bornless-ritual" className="feature-link">
-                Listen to Voices →
+                Read the Ritual →
               </Link>
             </div>
 
