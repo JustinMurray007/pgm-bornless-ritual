@@ -447,8 +447,8 @@ export default function SpeakMagicController() {
           chunks: audioChunksRef.current.length,
         });
         
-        // Validate audio blob
-        if (audioBlob.size < 1000) {
+        // Validate audio blob (lowered threshold to be less strict)
+        if (audioBlob.size < 100) {
           console.warn('Audio blob too small:', audioBlob.size);
           setFeedback('⏱️ Recording too short or quiet. Please speak louder and try again.');
           setIsListening(false);
