@@ -257,6 +257,10 @@ export default function SpeakMagicController() {
       if (audioRef.current) {
         try {
           audioRef.current.pause();
+          // Revoke object URL to prevent memory leaks
+          if (audioRef.current.src.startsWith('blob:')) {
+            URL.revokeObjectURL(audioRef.current.src);
+          }
           audioRef.current.src = '';
         } catch (e) {
           // Ignore errors on cleanup
@@ -307,56 +311,61 @@ export default function SpeakMagicController() {
         console.warn('Unexpected blob type:', audioBlob.type);
       }
       
-      // Convert blob to base64 data URL for better Firefox compatibility
-      const reader = new FileReader();
-      reader.onloadend = async () => {
-        const base64data = reader.result as string;
-        
-        if (audioRef.current) {
-          audioRef.current.pause();
-          audioRef.current.src = '';
-        }
-
-        const audio = new Audio();
-        audio.preload = 'auto';
-        audioRef.current = audio;
-
-        audio.onerror = (e) => {
-          console.error('Audio playback error:', e);
-          console.error('Audio error details:', {
-            error: audio.error,
-            code: audio.error?.code,
-            message: audio.error?.message,
-            networkState: audio.networkState,
-            readyState: audio.readyState,
-          });
-          setIsPlaying(false);
-          setFeedback('Could not play audio. Please try again.');
-        };
-
-        audio.onended = () => {
-          console.log('Audio playback ended');
-          setIsPlaying(false);
-        };
-
-        audio.onloadeddata = () => {
-          console.log('Audio loaded successfully');
-        };
-
-        // Set src AFTER attaching event listeners
-        audio.src = base64data;
-
-        console.log('Starting audio playback with data URL');
-        try {
-          await audio.play();
-        } catch (playError) {
-          console.error('Play failed:', playError);
-          setIsPlaying(false);
-          setFeedback('Could not play audio. Please try clicking the button again.');
-        }
-      };
+      // Create object URL for audio playback (more reliable than data URL)
+      const audioUrl = URL.createObjectURL(audioBlob);
       
-      reader.readAsDataURL(audioBlob);
+      if (audioRef.current) {
+        audioRef.current.pause();
+        // Revoke old object URL to prevent memory leaks
+        if (audioRef.current.src.startsWith('blob:')) {
+          URL.revokeObjectURL(audioRef.current.src);
+        }
+        audioRef.current.src = '';
+      }
+
+      const audio = new Audio();
+      audio.preload = 'auto';
+      audioRef.current = audio;
+
+      audio.onerror = (e) => {
+        console.error('Audio playback error:', e);
+        console.error('Audio error details:', {
+          error: audio.error,
+          code: audio.error?.code,
+          message: audio.error?.message,
+          networkState: audio.networkState,
+          readyState: audio.readyState,
+        });
+        setIsPlaying(false);
+        setFeedback('Could not play audio. Please try again.');
+        // Clean up object URL on error
+        URL.revokeObjectURL(audioUrl);
+      };
+
+      audio.onended = () => {
+        console.log('Audio playback ended');
+        setIsPlaying(false);
+        // Clean up object URL after playback
+        URL.revokeObjectURL(audioUrl);
+      };
+
+      audio.onloadeddata = () => {
+        console.log('Audio loaded successfully');
+      };
+
+      // Set src AFTER attaching event listeners
+      audio.src = audioUrl;
+
+      console.log('Starting audio playback with object URL');
+      try {
+        await audio.play();
+      } catch (playError) {
+        console.error('Play failed:', playError);
+        setIsPlaying(false);
+        setFeedback('Could not play audio. Please try clicking the button again.');
+        // Clean up object URL on play error
+        URL.revokeObjectURL(audioUrl);
+      }
     } catch (error) {
       console.error('Error playing pronunciation:', error);
       setIsPlaying(false);
