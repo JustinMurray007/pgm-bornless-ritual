@@ -446,6 +446,9 @@ export default function SpeakMagicController() {
       };
 
       mediaRecorder.onstop = async () => {
+        // Small delay to ensure all audio chunks are collected
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
         setFeedback('🔄 Processing your speech...');
         
         const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
@@ -456,10 +459,10 @@ export default function SpeakMagicController() {
           chunks: audioChunksRef.current.length,
         });
         
-        // Validate audio blob (lowered threshold to be less strict)
-        if (audioBlob.size < 100) {
+        // Validate audio blob (very lenient threshold - 50 bytes minimum)
+        if (audioBlob.size < 50) {
           console.warn('Audio blob too small:', audioBlob.size);
-          setFeedback('⏱️ Recording too short or quiet. Please speak louder and try again.');
+          setFeedback('⏱️ Could not hear you clearly. Please speak louder and closer to the microphone.');
           setIsListening(false);
           stream.getTracks().forEach(track => track.stop());
           return;
