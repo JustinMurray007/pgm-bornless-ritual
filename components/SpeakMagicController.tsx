@@ -458,12 +458,15 @@ export default function SpeakMagicController() {
       mediaRecorder.ondataavailable = (event) => {
         if (event.data.size > 0) {
           audioChunksRef.current.push(event.data);
+          console.log('Audio chunk received:', event.data.size, 'bytes');
         }
       };
 
       mediaRecorder.onstop = async () => {
+        console.log('MediaRecorder stopped, processing audio...');
+        
         // Longer delay to ensure all audio chunks are collected
-        await new Promise(resolve => setTimeout(resolve, 300));
+        await new Promise(resolve => setTimeout(resolve, 500));
         
         setFeedback('🔄 Processing your speech...');
         
@@ -533,11 +536,23 @@ export default function SpeakMagicController() {
 
       mediaRecorder.start();
       setIsListening(true);
-      setFeedback('🎤 Listening... Speak clearly now! (Recording for 10 seconds)');
+      
+      // Countdown timer
+      let secondsLeft = 10;
+      setFeedback(`🎤 Recording... ${secondsLeft} seconds remaining. Speak now!`);
+      
+      const countdownInterval = setInterval(() => {
+        secondsLeft--;
+        if (secondsLeft > 0) {
+          setFeedback(`🎤 Recording... ${secondsLeft} seconds remaining. Keep speaking!`);
+        }
+      }, 1000);
 
-      // Auto-stop after 10 seconds (increased from 8)
+      // Auto-stop after 10 seconds
       setTimeout(() => {
+        clearInterval(countdownInterval);
         if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+          console.log('Auto-stopping recording after 10 seconds');
           mediaRecorderRef.current.stop();
         }
       }, 10000);
