@@ -312,9 +312,14 @@ export default function SpeakMagicController() {
       if (audioRef.current) {
         audioRef.current.pause();
         audioRef.current.src = '';
+        // Revoke old URL if it exists
+        if (audioRef.current.src.startsWith('blob:')) {
+          URL.revokeObjectURL(audioRef.current.src);
+        }
       }
 
-      const audio = new Audio(audioUrl);
+      const audio = new Audio();
+      audio.preload = 'auto';
       audioRef.current = audio;
 
       audio.onerror = (e) => {
@@ -328,7 +333,7 @@ export default function SpeakMagicController() {
         });
         setIsPlaying(false);
         setFeedback('Could not play audio. Please try again.');
-        URL.revokeObjectURL(audioUrl);
+        // Don't revoke URL here - it might still be loading
       };
 
       audio.onended = () => {
@@ -340,6 +345,9 @@ export default function SpeakMagicController() {
       audio.onloadeddata = () => {
         console.log('Audio loaded successfully');
       };
+
+      // Set src AFTER attaching event listeners
+      audio.src = audioUrl;
 
       console.log('Starting audio playback');
       try {
