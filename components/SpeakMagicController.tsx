@@ -446,8 +446,8 @@ export default function SpeakMagicController() {
       };
 
       mediaRecorder.onstop = async () => {
-        // Small delay to ensure all audio chunks are collected
-        await new Promise(resolve => setTimeout(resolve, 100));
+        // Longer delay to ensure all audio chunks are collected
+        await new Promise(resolve => setTimeout(resolve, 200));
         
         setFeedback('🔄 Processing your speech...');
         
@@ -459,8 +459,8 @@ export default function SpeakMagicController() {
           chunks: audioChunksRef.current.length,
         });
         
-        // Validate audio blob (very lenient threshold - 50 bytes minimum)
-        if (audioBlob.size < 50) {
+        // Very lenient validation - only reject if truly empty (20 bytes minimum)
+        if (audioBlob.size < 20) {
           console.warn('Audio blob too small:', audioBlob.size);
           setFeedback('⏱️ Could not hear you clearly. Please speak louder and closer to the microphone.');
           setIsListening(false);
@@ -514,14 +514,14 @@ export default function SpeakMagicController() {
 
       mediaRecorder.start();
       setIsListening(true);
-      setFeedback('🎤 Listening... Speak clearly now! (Recording for 6 seconds)');
+      setFeedback('🎤 Listening... Speak clearly now! (Recording for 8 seconds)');
 
-      // Auto-stop after 6 seconds (increased from 5)
+      // Auto-stop after 8 seconds (increased from 6)
       setTimeout(() => {
         if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
           mediaRecorderRef.current.stop();
         }
-      }, 6000);
+      }, 8000);
 
     } catch (error) {
       console.error('Error accessing microphone:', error);
