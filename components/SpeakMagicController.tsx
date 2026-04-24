@@ -436,7 +436,17 @@ export default function SpeakMagicController() {
         console.log('Audio blob created:', {
           size: audioBlob.size,
           type: audioBlob.type,
+          chunks: audioChunksRef.current.length,
         });
+        
+        // Validate audio blob
+        if (audioBlob.size < 1000) {
+          console.warn('Audio blob too small:', audioBlob.size);
+          setFeedback('⏱️ Recording too short or quiet. Please speak louder and try again.');
+          setIsListening(false);
+          stream.getTracks().forEach(track => track.stop());
+          return;
+        }
         
         // Send to ElevenLabs STT API
         const formData = new FormData();
@@ -460,11 +470,16 @@ export default function SpeakMagicController() {
 
           const result = await response.json();
           const transcript = result.transcript?.toLowerCase().trim() || '';
+          
+          console.log('STT result:', {
+            transcript,
+            length: transcript.length,
+          });
 
           if (transcript) {
             handleSpeechResult(transcript);
           } else {
-            setFeedback('⏱️ Could not hear you clearly. Please try again.');
+            setFeedback('⏱️ Could not hear you clearly. Please speak louder and closer to the microphone.');
           }
         } catch (error) {
           console.error('ElevenLabs STT error:', error);
@@ -479,14 +494,14 @@ export default function SpeakMagicController() {
 
       mediaRecorder.start();
       setIsListening(true);
-      setFeedback('🎤 Listening... Speak now! (Recording for 5 seconds)');
+      setFeedback('🎤 Listening... Speak clearly now! (Recording for 6 seconds)');
 
-      // Auto-stop after 5 seconds
+      // Auto-stop after 6 seconds (increased from 5)
       setTimeout(() => {
         if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
           mediaRecorderRef.current.stop();
         }
-      }, 5000);
+      }, 6000);
 
     } catch (error) {
       console.error('Error accessing microphone:', error);
