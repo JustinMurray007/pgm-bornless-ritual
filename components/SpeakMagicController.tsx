@@ -353,28 +353,26 @@ export default function SpeakMagicController() {
         console.log('Audio loaded successfully, duration:', audio.duration);
       });
 
-      audio.addEventListener('canplaythrough', () => {
-        console.log('Audio can play through');
-      });
+      // Wait for canplaythrough event before playing
+      const playAudio = () => {
+        console.log('Audio can play through, starting playback');
+        audio.play().then(() => {
+          console.log('Audio playback started successfully');
+        }).catch((playError) => {
+          console.error('Play failed:', playError);
+          setIsPlaying(false);
+          setFeedback('Could not play audio. Please try clicking the button again.');
+          URL.revokeObjectURL(audioUrl);
+        });
+      };
+
+      audio.addEventListener('canplaythrough', playAudio, { once: true });
 
       // Set source and load
       audio.src = audioUrl;
       audio.load(); // Explicitly load the audio
 
-      console.log('Starting audio playback with object URL');
-      
-      // Wait longer for the audio to load before playing (increased from 100ms to 300ms)
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
-      try {
-        await audio.play();
-        console.log('Audio playback started successfully');
-      } catch (playError) {
-        console.error('Play failed:', playError);
-        setIsPlaying(false);
-        setFeedback('Could not play audio. Please try clicking the button again.');
-        URL.revokeObjectURL(audioUrl);
-      }
+      console.log('Audio loading started with object URL');
     } catch (error) {
       console.error('Error playing pronunciation:', error);
       setIsPlaying(false);
