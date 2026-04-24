@@ -251,18 +251,13 @@ export default function SpeakMagicController() {
           noiseSuppression: true,
           autoGainControl: true,
         },
-        vad: {
-          silenceThresholdSecs: 3.5, // Wait 3.5 seconds of silence before committing
-          threshold: 0.5, // Speech detection sensitivity (0-1, higher = less sensitive)
-          minSpeechDurationMs: 250, // Require at least 250ms of speech
-          minSilenceDurationMs: 250, // Require at least 250ms of silence
-        },
       });
 
       scribeConnectionRef.current = connection;
       
       let hasReceivedSpeech = false;
       let sessionStarted = false;
+      let commitTimeout: NodeJS.Timeout | null = null;
 
       // Handle session started
       connection.on(RealtimeEvents.SESSION_STARTED, (data: any) => {
@@ -279,12 +274,33 @@ export default function SpeakMagicController() {
         partialTranscriptRef.current = data.text;
         setRealtimeTranscript(data.text);
         setFeedback(`🎤 Hearing: "${data.text}"`);
+        
+        // Reset commit timeout - wait 3.5 seconds of silence before committing
+        if (commitTimeout) {
+          clearTimeout(commitTimeout);
+        }
+        commitTimeout = setTimeout(() => {
+          console.log('3.5 seconds of silence - committing transcript');
+          if (scribeConnectionRef.current) {
+            try {
+              scribeConnectionRef.current.commit();
+            } catch (e) {
+              console.log('Commit error (ignored)');
+            }
+          }
+        }, 3500);
       });
 
       // Handle committed transcripts (finalized)
       connection.on(RealtimeEvents.COMMITTED_TRANSCRIPT, (data: any) => {
         console.log('Committed transcript:', data.text, 'hasReceivedSpeech:', hasReceivedSpeech);
         const transcript = data.text.toLowerCase().trim();
+        
+        // Clear commit timeout
+        if (commitTimeout) {
+          clearTimeout(commitTimeout);
+          commitTimeout = null;
+        }
         
         // Only process if we actually received speech
         if (transcript && hasReceivedSpeech) {
