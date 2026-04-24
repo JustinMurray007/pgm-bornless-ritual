@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 
 // Practice words from the PGM with their phonetic pronunciations
 const PRACTICE_WORDS = [
@@ -45,6 +45,7 @@ export default function SpeakMagicController() {
   const [feedback, setFeedback] = useState<string>('');
   const [isPlaying, setIsPlaying] = useState(false);
   const [completedWords, setCompletedWords] = useState<Set<number>>(new Set());
+  const [showFinalScore, setShowFinalScore] = useState(false);
   const [manualInput, setManualInput] = useState('');
   const [showManualInput, setShowManualInput] = useState(true); // Always show manual input option
   const [highlightManualInput, setHighlightManualInput] = useState(false); // Highlight when speech fails
@@ -65,6 +66,39 @@ export default function SpeakMagicController() {
       console.log('Brave browser detected - Web Speech API is blocked by design');
     }
   }, []);
+
+  const handleSpeechResult = useCallback((transcript: string) => {
+    const currentItem = stage === 'practice' 
+      ? PRACTICE_WORDS[currentWordIndex]
+      : CHALLENGE_PHRASES[currentWordIndex];
+
+    // Simple matching - check if key phonetic elements are present
+    const phoneticParts = currentItem.phonetic.toLowerCase().split(/[\s-]+/);
+    const matchCount = phoneticParts.filter(part => 
+      transcript.includes(part) || transcript.includes(part.replace('ah', 'a'))
+    ).length;
+
+    const matchPercentage = (matchCount / phoneticParts.length) * 100;
+
+    if (matchPercentage >= 30) {
+      setFeedback('✨ Excellent! You spoke the word of power correctly!');
+      if (stage === 'practice') {
+        setCompletedWords(prev => {
+          const newSet = new Set(prev);
+          newSet.add(currentWordIndex);
+          // Check if all words are completed
+          if (newSet.size === PRACTICE_WORDS.length) {
+            setTimeout(() => setShowFinalScore(true), 1000);
+          }
+          return newSet;
+        });
+      }
+    } else if (matchPercentage >= 15) {
+      setFeedback('🔮 Good attempt! Try emphasizing each syllable more clearly.');
+    } else {
+      setFeedback('🌙 Keep practicing. Listen to the pronunciation again and try to match it.');
+    }
+  }, [stage, currentWordIndex]);
 
   // Initialize speech recognition
   useEffect(() => {
@@ -230,36 +264,7 @@ export default function SpeakMagicController() {
         }
       }
     };
-  }, []);
-
-  const handleSpeechResult = (transcript: string) => {
-    const currentItem = stage === 'practice' 
-      ? PRACTICE_WORDS[currentWordIndex]
-      : CHALLENGE_PHRASES[currentWordIndex];
-
-    // Simple matching - check if key phonetic elements are present
-    const phoneticParts = currentItem.phonetic.toLowerCase().split(/[\s-]+/);
-    const matchCount = phoneticParts.filter(part => 
-      transcript.includes(part) || transcript.includes(part.replace('ah', 'a'))
-    ).length;
-
-    const matchPercentage = (matchCount / phoneticParts.length) * 100;
-
-    if (matchPercentage >= 60) {
-      setFeedback('✨ Excellent! You spoke the word of power correctly!');
-      if (stage === 'practice') {
-        setCompletedWords(prev => {
-          const newSet = new Set(prev);
-          newSet.add(currentWordIndex);
-          return newSet;
-        });
-      }
-    } else if (matchPercentage >= 30) {
-      setFeedback('🔮 Good attempt! Try emphasizing each syllable more clearly.');
-    } else {
-      setFeedback('🌙 Keep practicing. Listen to the pronunciation again and try to match it.');
-    }
-  };
+  }, [handleSpeechResult, isListening]);
 
   const playPronunciation = async (text: string, phonetic: string) => {
     if (isPlaying) return;
@@ -481,6 +486,48 @@ export default function SpeakMagicController() {
     setStage('practice');
     setCurrentWordIndex(0);
     setFeedback('');
+    setShowFinalScore(false);
+  };
+
+  const resetPractice = () => {
+    setCompletedWords(new Set());
+    setCurrentWordIndex(0);
+    setFeedback('');
+    setShowFinalScore(false);
+  };
+
+  const getFinalScoreData = () => {
+    const score = completedWords.size;
+    const percentage = (score / PRACTICE_WORDS.length) * 100;
+    
+    if (percentage >= 75) {
+      return {
+        grade: 'A',
+        title: 'Master Magician',
+        description: 'You have mastered the ancient words of power!',
+        gift: '🪄 Magic Wand',
+        giftDescription: 'A powerful wand to channel your magical abilities',
+        color: '#d4a574'
+      };
+    } else if (percentage >= 50) {
+      return {
+        grade: 'B',
+        title: 'Apprentice Sorcerer',
+        description: 'You show great promise in the magical arts.',
+        gift: '🧞 Magic Carpet',
+        giftDescription: 'A mystical carpet to aid your journey',
+        color: '#8b7355'
+      };
+    } else {
+      return {
+        grade: 'C',
+        title: 'Cursed Novice',
+        description: 'The spirits are displeased with your pronunciation...',
+        gift: '💀 Ancient Curse',
+        giftDescription: 'May you practice until the curse is lifted',
+        color: '#4a4a4a'
+      };
+    }
   };
 
   const currentItem = stage === 'practice' 
@@ -492,6 +539,55 @@ export default function SpeakMagicController() {
     : `${currentWordIndex + 1} / ${CHALLENGE_PHRASES.length}`;
 
   const allPracticeComplete = completedWords.size >= PRACTICE_WORDS.length * 0.6; // 60% completion
+  const finalScoreData = getFinalScoreData();
+
+  // Show final score modal
+  if (showFinalScore) {
+    return (
+      <div className="speak-magic-container">
+        <div className="speak-final-score">
+          <div className="speak-final-score-header">
+            <h2>Practice Complete!</h2>
+            <div className="speak-final-score-grade" style={{ color: finalScoreData.color }}>
+              {finalScoreData.grade}
+            </div>
+          </div>
+          
+          <div className="speak-final-score-body">
+            <h3>{finalScoreData.title}</h3>
+            <p className="speak-final-score-description">{finalScoreData.description}</p>
+            
+            <div className="speak-final-score-stats">
+              <div className="speak-final-score-stat">
+                <span className="speak-final-score-stat-value">{completedWords.size}</span>
+                <span className="speak-final-score-stat-label">Words Mastered</span>
+              </div>
+              <div className="speak-final-score-stat">
+                <span className="speak-final-score-stat-value">{Math.round((completedWords.size / PRACTICE_WORDS.length) * 100)}%</span>
+                <span className="speak-final-score-stat-label">Completion</span>
+              </div>
+            </div>
+
+            <div className="speak-final-score-gift">
+              <div className="speak-final-score-gift-icon">{finalScoreData.gift}</div>
+              <div className="speak-final-score-gift-text">
+                <strong>Your Reward:</strong> {finalScoreData.giftDescription}
+              </div>
+            </div>
+
+            <div className="speak-final-score-actions">
+              <button onClick={resetPractice} className="speak-btn speak-btn-primary">
+                Practice Again
+              </button>
+              <button onClick={switchToChallenge} className="speak-btn speak-btn-secondary">
+                Try Challenge Mode
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="speak-magic-container">

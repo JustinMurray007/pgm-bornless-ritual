@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import {
   RITUAL_VOICE_SCRIPTS,
   type RitualVoiceScript,
@@ -143,7 +143,7 @@ function ScriptPlayer({ script }: ScriptPlayerProps) {
   const blobUrlsRef = useRef<string[]>([]);
   const { showToast } = useToast();
 
-  const voicesPresent = {
+  const voicesPresent = useMemo(() => ({
     A: script.entries.some(e =>
       e.type === 'sequential' ? e.input.voiceLabel === 'A'
         : e.inputs.some(i => i.voiceLabel === 'A')
@@ -156,7 +156,7 @@ function ScriptPlayer({ script }: ScriptPlayerProps) {
       e.type === 'sequential' ? e.input.voiceLabel === 'C'
         : e.inputs.some(i => i.voiceLabel === 'C')
     ),
-  };
+  }), [script.entries]);
 
   const hasOverlap = script.entries.some(e => e.type === 'overlap');
 

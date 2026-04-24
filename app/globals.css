@@ -2431,3 +2431,206 @@ body {
     font-size: 1rem;
   }
 }
+
+/* Final Score Screen */
+.speak-final-score {
+  max-width: 600px;
+  margin: 2rem auto;
+  background: linear-gradient(135deg, rgba(212, 165, 116, 0.1) 0%, rgba(139, 115, 85, 0.05) 100%);
+  border: 2px solid var(--border-ink);
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+.speak-final-score-header {
+  text-align: center;
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 2px solid var(--border-ink);
+}
+
+.speak-final-score-header h2 {
+  font-family: var(--font-cinzel), Georgia, serif;
+  font-size: 2rem;
+  color: var(--ink-dark);
+  margin: 0 0 1rem 0;
+}
+
+.speak-final-score-grade {
+  font-family: var(--font-cinzel), Georgia, serif;
+  font-size: 4rem;
+  font-weight: bold;
+  line-height: 1;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.speak-final-score-body {
+  text-align: center;
+}
+
+.speak-final-score-body h3 {
+  font-family: var(--font-cinzel), Georgia, serif;
+  font-size: 1.5rem;
+  color: var(--ink-dark);
+  margin: 0 0 0.5rem 0;
+}
+
+.speak-final-score-description {
+  font-size: 1.1rem;
+  color: var(--ink-mid);
+  margin: 0 0 2rem 0;
+  line-height: 1.6;
+}
+
+.speak-final-score-stats {
+  display: flex;
+  justify-content: center;
+  gap: 3rem;
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 8px;
+}
+
+.speak-final-score-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.speak-final-score-stat-value {
+  font-family: var(--font-cinzel), Georgia, serif;
+  font-size: 2.5rem;
+  font-weight: bold;
+  color: var(--ink-dark);
+  line-height: 1;
+  margin-bottom: 0.5rem;
+}
+
+.speak-final-score-stat-label {
+  font-size: 0.9rem;
+  color: var(--ink-mid);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.speak-final-score-gift {
+  background: linear-gradient(135deg, rgba(212, 165, 116, 0.15) 0%, rgba(139, 115, 85, 0.1) 100%);
+  border: 2px solid var(--border-ink);
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.speak-final-score-gift-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+  animation: giftFloat 2s ease-in-out infinite;
+}
+
+@keyframes giftFloat {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.speak-final-score-gift-text {
+  font-size: 1rem;
+  color: var(--ink-dark);
+  line-height: 1.6;
+}
+
+.speak-final-score-gift-text strong {
+  display: block;
+  margin-bottom: 0.25rem;
+  font-family: var(--font-cinzel), Georgia, serif;
+}
+
+.speak-final-score-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.speak-btn-primary {
+  background: linear-gradient(135deg, var(--ink-dark) 0%, var(--ink-mid) 100%);
+  color: var(--papyrus-light);
+  border: none;
+  padding: 0.875rem 2rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-family: var(--font-cinzel), Georgia, serif;
+}
+
+.speak-btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.speak-btn-secondary {
+  background: transparent;
+  color: var(--ink-dark);
+  border: 2px solid var(--border-ink);
+  padding: 0.875rem 2rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-family: var(--font-cinzel), Georgia, serif;
+}
+
+.speak-btn-secondary:hover {
+  background: rgba(212, 165, 116, 0.1);
+  transform: translateY(-2px);
+}
+
+/* Mobile responsiveness for final score */
+@media (max-width: 768px) {
+  .speak-final-score {
+    margin: 1rem;
+    padding: 1.5rem;
+  }
+
+  .speak-final-score-header h2 {
+    font-size: 1.5rem;
+  }
+
+  .speak-final-score-grade {
+    font-size: 3rem;
+  }
+
+  .speak-final-score-body h3 {
+    font-size: 1.25rem;
+  }
+
+  .speak-final-score-stats {
+    gap: 2rem;
+    padding: 1rem;
+  }
+
+  .speak-final-score-stat-value {
+    font-size: 2rem;
+  }
+
+  .speak-final-score-gift-icon {
+    font-size: 3rem;
+  }
+
+  .speak-final-score-actions {
+    flex-direction: column;
+  }
+
+  .speak-btn-primary,
+  .speak-btn-secondary {
+    width: 100%;
+  }
+}
