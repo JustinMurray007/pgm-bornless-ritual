@@ -55,6 +55,7 @@ export default function SpeakMagicController() {
   const scribeConnectionRef = useRef<any>(null);
   const partialTranscriptRef = useRef<string>('');
   const [realtimeTranscript, setRealtimeTranscript] = useState<string>('');
+  const audioDurationRef = useRef<number>(3); // Default 3 seconds, updated when audio plays
 
   // Detect Brave browser on mount - removed, no longer needed
 
@@ -192,8 +193,16 @@ export default function SpeakMagicController() {
         URL.revokeObjectURL(audioUrl);
       };
 
+      const handleLoadedMetadata = () => {
+        // Store the audio duration for speech recognition timing
+        const duration = audio.duration;
+        audioDurationRef.current = duration;
+        console.log('Audio duration:', duration, 'seconds');
+      };
+
       audio.addEventListener('ended', handleEnded);
       audio.addEventListener('error', handleError);
+      audio.addEventListener('loadedmetadata', handleLoadedMetadata);
 
       // Set source and play
       audio.src = audioUrl;
@@ -267,9 +276,14 @@ export default function SpeakMagicController() {
         setIsListening(true);
         setFeedback('🎤 Ready! Speak now...');
         
-        // Set maximum listening time of 16 seconds
+        // Calculate maximum listening time based on audio sample duration
+        // Add 5 seconds buffer for slower speakers
+        const maxDuration = (audioDurationRef.current + 5) * 1000; // Convert to milliseconds
+        console.log('Max listening duration:', maxDuration / 1000, 'seconds (sample:', audioDurationRef.current, 's + 5s buffer)');
+        
+        // Set maximum listening time based on sample duration
         maxListeningTimeout = setTimeout(() => {
-          console.log('16 seconds elapsed - auto-committing');
+          console.log('Maximum duration reached - auto-committing');
           if (scribeConnectionRef.current) {
             try {
               scribeConnectionRef.current.commit();
@@ -277,7 +291,7 @@ export default function SpeakMagicController() {
               console.log('Commit error (ignored)');
             }
           }
-        }, 16000);
+        }, maxDuration);
       });
 
       // Handle partial transcripts (real-time feedback)
@@ -288,12 +302,12 @@ export default function SpeakMagicController() {
         setRealtimeTranscript(data.text);
         setFeedback(`🎤 Hearing: "${data.text}"`);
         
-        // Reset commit timeout - wait 3.5 seconds of silence before committing
+        // Reset commit timeout - wait 2 seconds of silence before committing
         if (commitTimeout) {
           clearTimeout(commitTimeout);
         }
         commitTimeout = setTimeout(() => {
-          console.log('3.5 seconds of silence - committing transcript');
+          console.log('2 seconds of silence - committing transcript');
           if (scribeConnectionRef.current) {
             try {
               scribeConnectionRef.current.commit();
@@ -301,7 +315,7 @@ export default function SpeakMagicController() {
               console.log('Commit error (ignored)');
             }
           }
-        }, 3500);
+        }, 2000);
       });
 
       // Handle committed transcripts (finalized)
