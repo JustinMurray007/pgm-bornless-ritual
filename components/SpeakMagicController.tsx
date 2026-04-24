@@ -329,7 +329,12 @@ export default function SpeakMagicController() {
       audioRef.current = audio;
 
       // Set up event handlers BEFORE setting src
+      let hasErrored = false;
+      
       audio.addEventListener('error', (e) => {
+        if (hasErrored) return; // Prevent duplicate error handling
+        hasErrored = true;
+        
         console.error('Audio playback error:', e);
         console.error('Audio error details:', {
           error: audio.error,
@@ -353,12 +358,17 @@ export default function SpeakMagicController() {
         console.log('Audio loaded successfully, duration:', audio.duration);
       });
 
-      // Wait for canplaythrough event before playing
-      const playAudio = () => {
-        console.log('Audio can play through, starting playback');
+      // Wait for audio to be ready before playing
+      const playWhenReady = () => {
+        if (hasErrored) return;
+        
+        console.log('Audio ready, starting playback');
         audio.play().then(() => {
           console.log('Audio playback started successfully');
         }).catch((playError) => {
+          if (hasErrored) return;
+          hasErrored = true;
+          
           console.error('Play failed:', playError);
           setIsPlaying(false);
           setFeedback('Could not play audio. Please try clicking the button again.');
@@ -366,7 +376,15 @@ export default function SpeakMagicController() {
         });
       };
 
-      audio.addEventListener('canplaythrough', playAudio, { once: true });
+      // Use loadedmetadata as it fires earlier than canplaythrough
+      audio.addEventListener('loadedmetadata', playWhenReady, { once: true });
+      
+      // Fallback timeout in case loadedmetadata never fires
+      const timeoutId = setTimeout(() => {
+        if (!hasErrored && audio.readyState >= 1) {
+          playWhenReady();
+        }
+      }, 1000);
 
       // Set source and load
       audio.src = audioUrl;
@@ -457,14 +475,8 @@ export default function SpeakMagicController() {
           chunks: audioChunksRef.current.length,
         });
         
-        // Extremely lenient validation - only reject if completely empty (10 bytes minimum)
-        if (audioBlob.size < 10) {
-          console.warn('Audio blob too small:', audioBlob.size);
-          setFeedback('⏱️ Could not hear you clearly. Please speak louder and closer to the microphone.');
-          setIsListening(false);
-          stream.getTracks().forEach(track => track.stop());
-          return;
-        }
+        // Skip size validation - let the API handle it
+        // This prevents false positives from premature validation
         
         // Send to ElevenLabs STT API
         const formData = new FormData();
