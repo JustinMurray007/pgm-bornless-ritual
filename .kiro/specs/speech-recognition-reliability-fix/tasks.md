@@ -19,7 +19,7 @@ This task list implements the fix for speech recognition reliability issues usin
 
 ## Phase 1: Exploration Tests (BEFORE Fix)
 
-- [ ] 1. Write bug condition exploration tests
+- [x] 1. Write bug condition exploration tests
   - **Property 1: Bug Condition** - Network Error Race Condition and Fallback Failure
   - **CRITICAL**: These tests MUST FAIL on unfixed code - failure confirms the bug exists
   - **DO NOT attempt to fix the test or the code when it fails**
@@ -41,7 +41,7 @@ This task list implements the fix for speech recognition reliability issues usin
   - Mark task complete when tests are written, run, and failures are documented
   - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7_
 
-- [ ] 2. Write preservation property tests (BEFORE implementing fix)
+- [x] 2. Write preservation property tests (BEFORE implementing fix)
   - **Property 2: Preservation** - Successful Recognition and Non-Network Error Behavior
   - **IMPORTANT**: Follow observation-first methodology
   - Observe behavior on UNFIXED code for successful recognition and non-network error scenarios
@@ -165,7 +165,7 @@ This task list implements the fix for speech recognition reliability issues usin
     - _Preservation: Existing cleanup behavior from Preservation Requirements_
     - _Requirements: 3.9_
 
-  - [ ] 3.7 Verify bug condition exploration tests now pass
+  - [x] 3.7 Verify bug condition exploration tests now pass
     - **Property 1: Expected Behavior** - Network Error Recovery and Fallback Success
     - **IMPORTANT**: Re-run the SAME tests from task 1 - do NOT write new tests
     - The tests from task 1 encode the expected behavior
@@ -178,7 +178,7 @@ This task list implements the fix for speech recognition reliability issues usin
     - Verify Test Case 4: MediaRecorder initializes and API call succeeds
     - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8_
 
-  - [ ] 3.8 Verify preservation tests still pass
+  - [x] 3.8 Verify preservation tests still pass
     - **Property 2: Preservation** - Successful Recognition and Non-Network Error Behavior
     - **IMPORTANT**: Re-run the SAME tests from task 2 - do NOT write new tests
     - Run preservation property tests: `npm test -- components/__tests__/SpeakMagicController.preservation.test.tsx`
