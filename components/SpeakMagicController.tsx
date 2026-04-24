@@ -307,57 +307,56 @@ export default function SpeakMagicController() {
         console.warn('Unexpected blob type:', audioBlob.type);
       }
       
-      const audioUrl = URL.createObjectURL(audioBlob);
-
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current.src = '';
-        // Revoke old URL if it exists
-        if (audioRef.current.src.startsWith('blob:')) {
-          URL.revokeObjectURL(audioRef.current.src);
+      // Convert blob to base64 data URL for better Firefox compatibility
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const base64data = reader.result as string;
+        
+        if (audioRef.current) {
+          audioRef.current.pause();
+          audioRef.current.src = '';
         }
-      }
 
-      const audio = new Audio();
-      audio.preload = 'auto';
-      audioRef.current = audio;
+        const audio = new Audio();
+        audio.preload = 'auto';
+        audioRef.current = audio;
 
-      audio.onerror = (e) => {
-        console.error('Audio playback error:', e);
-        console.error('Audio error details:', {
-          error: audio.error,
-          code: audio.error?.code,
-          message: audio.error?.message,
-          networkState: audio.networkState,
-          readyState: audio.readyState,
-        });
-        setIsPlaying(false);
-        setFeedback('Could not play audio. Please try again.');
-        // Don't revoke URL here - it might still be loading
+        audio.onerror = (e) => {
+          console.error('Audio playback error:', e);
+          console.error('Audio error details:', {
+            error: audio.error,
+            code: audio.error?.code,
+            message: audio.error?.message,
+            networkState: audio.networkState,
+            readyState: audio.readyState,
+          });
+          setIsPlaying(false);
+          setFeedback('Could not play audio. Please try again.');
+        };
+
+        audio.onended = () => {
+          console.log('Audio playback ended');
+          setIsPlaying(false);
+        };
+
+        audio.onloadeddata = () => {
+          console.log('Audio loaded successfully');
+        };
+
+        // Set src AFTER attaching event listeners
+        audio.src = base64data;
+
+        console.log('Starting audio playback with data URL');
+        try {
+          await audio.play();
+        } catch (playError) {
+          console.error('Play failed:', playError);
+          setIsPlaying(false);
+          setFeedback('Could not play audio. Please try clicking the button again.');
+        }
       };
-
-      audio.onended = () => {
-        console.log('Audio playback ended');
-        setIsPlaying(false);
-        URL.revokeObjectURL(audioUrl);
-      };
-
-      audio.onloadeddata = () => {
-        console.log('Audio loaded successfully');
-      };
-
-      // Set src AFTER attaching event listeners
-      audio.src = audioUrl;
-
-      console.log('Starting audio playback');
-      try {
-        await audio.play();
-      } catch (playError) {
-        console.error('Play failed:', playError);
-        setIsPlaying(false);
-        setFeedback('Could not play audio. Please try clicking the button again.');
-        URL.revokeObjectURL(audioUrl);
-      }
+      
+      reader.readAsDataURL(audioBlob);
     } catch (error) {
       console.error('Error playing pronunciation:', error);
       setIsPlaying(false);
