@@ -2,6 +2,16 @@
  * Shared Web Audio utilities used by all TTS playback paths.
  */
 
+// Reuse a single AudioContext to avoid hitting browser limits
+let sharedAudioContext: AudioContext | null = null;
+
+function getAudioContext(): AudioContext {
+  if (!sharedAudioContext || sharedAudioContext.state === 'closed') {
+    sharedAudioContext = new AudioContext();
+  }
+  return sharedAudioContext;
+}
+
 /**
  * Inserts a subtle echo/reverb chain between `source` and the audio context
  * destination. Returns the output gain node (already connected to destination).
@@ -56,30 +66,51 @@ export async function playTTS(
   const blob = await response.blob();
   const url = URL.createObjectURL(blob);
 
-  return new Promise<void>((resolve) => {
+  return new Promise<void>((resolve, reject) => {
     const audio = new Audio(url);
 
     const cleanup = () => {
       URL.revokeObjectURL(url);
+      audio.pause();
+      audio.src = '';
+    };
+
+    const handleEnd = () => {
+      cleanup();
       resolve();
     };
 
-    audio.onended = cleanup;
-    audio.onerror = cleanup;
+    const handleError = () => {
+      cleanup();
+      reject(new Error('Audio playback failed'));
+    };
 
-    // Apply echo via Web Audio
+    // Handle abort signal
+    if (signal) {
+      const abortHandler = () => {
+        cleanup();
+        reject(new Error('Aborted'));
+      };
+      signal.addEventListener('abort', abortHandler, { once: true });
+    }
+
+    audio.addEventListener('ended', handleEnd, { once: true });
+    audio.addEventListener('error', handleError, { once: true });
+
+    // Apply echo via Web Audio using shared context
     try {
-      const ctx = new AudioContext();
+      const ctx = getAudioContext();
       const source = ctx.createMediaElementSource(audio);
       applyEcho(ctx, source);
-      // Close context after playback
-      audio.addEventListener('ended', () => ctx.close().catch(() => {}), { once: true });
-      audio.addEventListener('error', () => ctx.close().catch(() => {}), { once: true });
-    } catch {
+    } catch (err) {
+      console.warn('Failed to apply echo, playing without effects:', err);
       // Fallback: play without echo
     }
 
-    audio.play().catch(cleanup);
+    audio.play().catch((err) => {
+      cleanup();
+      reject(err);
+    });
   });
 }
 

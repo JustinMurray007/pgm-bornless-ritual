@@ -3,9 +3,9 @@ import { validateEnv } from '@/lib/env';
 import { rateLimit } from '@/lib/rateLimit';
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
-  // Rate limiting: 20 requests per minute per IP
+  // Rate limiting: 40 requests per minute per IP (increased for Pro plan)
   const ip = request.headers.get('x-forwarded-for') ?? request.headers.get('x-real-ip') ?? 'unknown';
-  const rateLimitResult = rateLimit(ip, 20, 60000);
+  const rateLimitResult = rateLimit(ip, 40, 60000);
 
   if (!rateLimitResult.success) {
     return NextResponse.json(

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { validateEnv } from '@/lib/env';
+import { rateLimit } from '@/lib/rateLimit';
 
 /**
  * POST /api/ritual-voice
@@ -17,6 +18,23 @@ import { validateEnv } from '@/lib/env';
  *    → returns audio/mpeg
  */
 export async function POST(request: NextRequest): Promise<NextResponse> {
+  // Rate limiting: 25 requests per minute per IP
+  const ip = request.headers.get('x-forwarded-for') ?? request.headers.get('x-real-ip') ?? 'unknown';
+  const rateLimitResult = rateLimit(ip, 25, 60000);
+
+  if (!rateLimitResult.success) {
+    return NextResponse.json(
+      { error: 'Too many requests. Please try again in a minute.' },
+      { 
+        status: 429,
+        headers: {
+          'Retry-After': '60',
+          'X-RateLimit-Remaining': '0'
+        }
+      }
+    );
+  }
+
   try {
     validateEnv();
   } catch (error) {

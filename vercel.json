@@ -1,0 +1,36 @@
+{
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "X-XSS-Protection",
+          "value": "1; mode=block"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        }
+      ]
+    }
+  ],
+  "functions": {
+    "app/api/tts/route.ts": {
+      "maxDuration": 30
+    },
+    "app/api/stt/route.ts": {
+      "maxDuration": 30
+    },
+    "app/api/ritual-voice/route.ts": {
+      "maxDuration": 60
+    }
+  }
+}
