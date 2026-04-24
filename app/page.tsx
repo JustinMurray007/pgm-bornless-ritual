@@ -9,6 +9,15 @@ export default function HomePage() {
       <main className="hero-page">
         {/* Hero Section */}
         <section className="hero-section">
+          <div className="hero-content">
+            <h1 className="hero-title">
+              Digital Grimoire
+            </h1>
+            <p className="hero-tagline">
+              The World's Oldest Spells & Magic. Brought Back To Life With AI Technology
+            </p>
+          </div>
+
           {/* Video Container */}
           <div className="hero-video-container">
             <div className="hero-video-wrapper">
